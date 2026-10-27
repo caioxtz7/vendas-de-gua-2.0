@@ -2,8 +2,8 @@
 <html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDV & Gestão de Loja (Firebase Realtime)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PDV & Gestão de Loja</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script>
@@ -19,15 +19,15 @@
         }
     </script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-20 md:pb-6 font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-24 md:pb-6 font-sans select-none">
 
     <!-- Status da Conexão Firebase -->
-    <div id="status-conexao" class="bg-amber-500 text-slate-900 font-bold text-xs py-1 px-4 text-center">
+    <div id="status-conexao" class="bg-amber-500 text-slate-900 font-bold text-xs py-1 px-4 text-center sticky top-0 z-40">
         ⚡ Conectando ao Firebase Realtime Database...
     </div>
 
     <!-- Header -->
-    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 shadow-lg">
+    <header class="bg-slate-800 border-b border-slate-700 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-blue-600 rounded-xl text-white">
@@ -36,10 +36,10 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg leading-tight">PDV & Estoque</h1>
-                    <p class="text-xs text-slate-400">Sincronizado via Firebase Nuvem</p>
+                    <p class="text-xs text-slate-400">Sincronizado via Nuvem</p>
                 </div>
             </div>
-            <button onclick="abrirModalTroco()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 border border-slate-600">
+            <button onclick="abrirModalTroco()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 border border-slate-600 active:scale-95 transition">
                 <i class="fa-solid fa-cash-register text-emerald-400"></i>
                 <span class="hidden sm:inline">Ajustar Saldo Inicial</span>
             </button>
@@ -47,23 +47,23 @@
     </header>
 
     <!-- Navegação Superior / Mobile Bottom -->
-    <nav class="bg-slate-800 border-t border-slate-700 md:border-b md:border-t-0 fixed bottom-0 left-0 right-0 md:sticky md:top-[61px] z-20 shadow-xl">
+    <nav class="bg-slate-800 border-t border-slate-700 md:border-b md:border-t-0 fixed bottom-0 left-0 right-0 md:sticky md:top-0 z-30 shadow-xl">
         <div class="max-w-7xl mx-auto flex justify-around md:justify-start gap-1 p-2">
-            <button onclick="mudarAba('vender')" id="nav-vender" class="aba-btn flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition flex flex-col md:flex-row items-center justify-center gap-2 bg-blue-600 text-white">
-                <i class="fa-solid fa-cart-shopping"></i> Vender (PDV)
+            <button onclick="mudarAba('vender')" id="nav-vender" class="aba-btn flex-1 md:flex-none px-4 py-2.5 rounded-lg text-xs md:text-sm font-semibold transition flex flex-col md:flex-row items-center justify-center gap-1.5 bg-blue-600 text-white">
+                <i class="fa-solid fa-cart-shopping text-base"></i> Vender (PDV)
             </button>
-            <button onclick="mudarAba('produtos')" id="nav-produtos" class="aba-btn flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition flex flex-col md:flex-row items-center justify-center gap-2 text-slate-400 hover:bg-slate-700">
-                <i class="fa-solid fa-boxes-stacked"></i> Produtos
+            <button onclick="mudarAba('produtos')" id="nav-produtos" class="aba-btn flex-1 md:flex-none px-4 py-2.5 rounded-lg text-xs md:text-sm font-semibold transition flex flex-col md:flex-row items-center justify-center gap-1.5 text-slate-400 hover:bg-slate-700">
+                <i class="fa-solid fa-boxes-stacked text-base"></i> Produtos
             </button>
-            <button onclick="mudarAba('clientes')" id="nav-clientes" class="aba-btn flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition flex flex-col md:flex-row items-center justify-center gap-2 text-slate-400 hover:bg-slate-700">
-                <i class="fa-solid fa-users"></i> Clientes
+            <button onclick="mudarAba('clientes')" id="nav-clientes" class="aba-btn flex-1 md:flex-none px-4 py-2.5 rounded-lg text-xs md:text-sm font-semibold transition flex flex-col md:flex-row items-center justify-center gap-1.5 text-slate-400 hover:bg-slate-700">
+                <i class="fa-solid fa-users text-base"></i> Clientes
             </button>
-            <button onclick="mudarAba('entregas')" id="nav-entregas" class="aba-btn flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition flex flex-col md:flex-row items-center justify-center gap-2 text-slate-400 hover:bg-slate-700 relative">
-                <i class="fa-solid fa-motorcycle"></i> Entregas
-                <span id="badge-entregas" class="hidden absolute top-1 right-2 md:relative md:top-0 md:right-0 bg-amber-500 text-slate-900 font-bold text-xs px-1.5 py-0.5 rounded-full">0</span>
+            <button onclick="mudarAba('entregas')" id="nav-entregas" class="aba-btn flex-1 md:flex-none px-4 py-2.5 rounded-lg text-xs md:text-sm font-semibold transition flex flex-col md:flex-row items-center justify-center gap-1.5 text-slate-400 hover:bg-slate-700 relative">
+                <i class="fa-solid fa-motorcycle text-base"></i> Entregas
+                <span id="badge-entregas" class="hidden absolute top-1 right-2 bg-amber-500 text-slate-900 font-extrabold text-[10px] px-1.5 py-0.5 rounded-full">0</span>
             </button>
-            <button onclick="mudarAba('caixa')" id="nav-caixa" class="aba-btn flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition flex flex-col md:flex-row items-center justify-center gap-2 text-slate-400 hover:bg-slate-700">
-                <i class="fa-solid fa-chart-line"></i> Caixa & Histórico
+            <button onclick="mudarAba('caixa')" id="nav-caixa" class="aba-btn flex-1 md:flex-none px-4 py-2.5 rounded-lg text-xs md:text-sm font-semibold transition flex flex-col md:flex-row items-center justify-center gap-1.5 text-slate-400 hover:bg-slate-700">
+                <i class="fa-solid fa-chart-line text-base"></i> Caixa
             </button>
         </div>
     </nav>
@@ -81,9 +81,9 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <div>
                     <h2 class="text-lg font-bold">Gerenciamento de Estoque</h2>
-                    <p class="text-xs text-slate-400">Cadastre e ajuste preços ou quantidades na nuvem</p>
+                    <p class="text-xs text-slate-400">Cadastre e ajuste preços ou quantidades</p>
                 </div>
-                <button onclick="abrirModalProduto()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow-lg">
+                <button onclick="abrirModalProduto()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
                     <i class="fa-solid fa-plus"></i> Novo Produto
                 </button>
             </div>
@@ -95,15 +95,15 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <div>
                     <h2 class="text-lg font-bold">Cadastro de Clientes</h2>
-                    <p class="text-xs text-slate-400">Endereços salvos e sincronizados com a equipe</p>
+                    <p class="text-xs text-slate-400">Endereços salvos para entrega rápida</p>
                 </div>
-                <button onclick="abrirModalCliente()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
+                <button onclick="abrirModalCliente()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition">
                     <i class="fa-solid fa-user-plus"></i> Adicionar Cliente
                 </button>
             </div>
             <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
-                <input type="text" id="busca-cliente-aba" oninput="filtrarClientesAba()" placeholder="Pesquisar por nome, telefone ou rua..." class="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-blue-500">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
+                <input type="text" id="busca-cliente-aba" oninput="renderizarClientes()" placeholder="Pesquisar cliente por nome, telefone ou rua..." class="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-blue-500">
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-clientes"></div>
         </section>
@@ -112,7 +112,7 @@
         <section id="aba-entregas" class="aba-conteudo hidden space-y-6">
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <h2 class="text-lg font-bold text-amber-400">Painel do Entregador (Tempo Real)</h2>
-                <p class="text-xs text-slate-400">Quando a loja lança uma venda, ela aparece na hora nesta tela para o entregador</p>
+                <p class="text-xs text-slate-400">Toque no botão para abrir a rota direta no Google Maps</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-entregas"></div>
         </section>
@@ -140,14 +140,14 @@
                     <span class="text-xs text-slate-400 block">Taxas Entregador</span>
                     <span id="c-taxas" class="text-lg font-bold text-amber-400">R$ 0,00</span>
                 </div>
-                <div class="bg-slate-800 p-3.5 rounded-xl border border-slate-700 bg-slate-800/80">
+                <div class="bg-slate-800 p-3.5 rounded-xl border border-slate-700">
                     <span class="text-xs text-slate-400 block">Total Faturado</span>
                     <span id="c-total" class="text-lg font-bold text-cyan-400">R$ 0,00</span>
                 </div>
             </div>
 
-            <div class="flex gap-3 justify-end">
-                <button onclick="fecharCaixa()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-4 py-2 rounded-lg text-sm font-medium transition">
+            <div class="flex justify-end">
+                <button onclick="fecharCaixa()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-4 py-2 rounded-lg text-sm font-semibold transition active:scale-95">
                     <i class="fa-solid fa-lock"></i> Reiniciar / Fechar Caixa
                 </button>
             </div>
@@ -155,7 +155,7 @@
             <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                 <div class="p-4 border-b border-slate-700 font-bold flex justify-between items-center">
                     <span>Histórico de Vendas</span>
-                    <span class="text-xs text-slate-400 font-normal">Estornos devolvem o estoque na hora</span>
+                    <span class="text-xs text-slate-400 font-normal">Estornos estornam os valores e devolvem o estoque</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -182,12 +182,12 @@
         <div class="bg-slate-800 max-w-lg w-full rounded-2xl border border-slate-700 p-5 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                 <h3 class="font-bold text-lg">Finalizar Venda</h3>
-                <button onclick="fecharModalVenda()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="fecharModalVenda()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
 
             <div class="space-y-2">
                 <label class="text-xs text-slate-400 font-semibold uppercase">Cliente (Opcional)</label>
-                <input type="text" id="venda-busca-cliente" oninput="filtrarClientesModal()" placeholder="🔍 Digite para buscar cliente salvo..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100">
+                <input type="text" id="venda-busca-cliente" oninput="filtrarClientesModal()" placeholder="🔍 Digite para buscar cliente..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100">
                 <select id="venda-cliente-select" onchange="selecionarClienteSalvo()" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100">
                     <option value="">-- Cliente Balcão / Não Cadastrado --</option>
                 </select>
@@ -218,7 +218,7 @@
                     <input type="text" id="ent-rua-bairro" placeholder="Ex: Rua das Flores, Centro" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400">Nº / Apto / Complemento (Somente para o entregador)</label>
+                    <label class="text-xs text-slate-400">Nº / Apto / Complemento (Para o entregador)</label>
                     <input type="text" id="ent-complemento" placeholder="Ex: Nº 123, Apto 201" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
             </div>
@@ -226,9 +226,9 @@
             <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-700">
                 <span class="text-sm font-medium">Quantidade:</span>
                 <div class="flex items-center gap-3">
-                    <button onclick="alterarQtdVenda(-1)" class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center font-bold text-lg text-slate-300">-</button>
+                    <button onclick="alterarQtdVenda(-1)" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center font-bold text-xl text-slate-300 active:bg-slate-700">-</button>
                     <span id="venda-qtd" class="font-bold text-lg w-6 text-center">1</span>
-                    <button onclick="alterarQtdVenda(1)" class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center font-bold text-lg text-slate-300">+</button>
+                    <button onclick="alterarQtdVenda(1)" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center font-bold text-xl text-slate-300 active:bg-slate-700">+</button>
                 </div>
             </div>
 
@@ -267,8 +267,8 @@
                 <span id="venda-total" class="text-2xl font-black text-emerald-400">R$ 0,00</span>
             </div>
 
-            <button onclick="confirmarVenda()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition">
-                <i class="fa-solid fa-check"></i> Finalizar e Registrar Venda
+            <button onclick="confirmarVenda()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition">
+                <i class="fa-solid fa-check"></i> Finalizar Venda
             </button>
         </div>
     </div>
@@ -278,7 +278,7 @@
         <div class="bg-slate-800 max-w-md w-full rounded-2xl border border-slate-700 p-5 space-y-4">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                 <h3 class="font-bold text-lg" id="modal-prod-titulo">Adicionar Produto</h3>
-                <button onclick="fecharModalProduto()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="fecharModalProduto()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <input type="hidden" id="prod-id">
             <div class="space-y-3">
@@ -301,7 +301,7 @@
                     <input type="number" step="0.50" id="prod-taxa" placeholder="3.00" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
             </div>
-            <button onclick="salvarProduto()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg">Salvar Produto</button>
+            <button onclick="salvarProduto()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition">Salvar Produto</button>
         </div>
     </div>
 
@@ -310,7 +310,7 @@
         <div class="bg-slate-800 max-w-md w-full rounded-2xl border border-slate-700 p-5 space-y-4">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                 <h3 class="font-bold text-lg">Novo Cliente</h3>
-                <button onclick="fecharModalCliente()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="fecharModalCliente()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="space-y-3">
                 <div>
@@ -330,7 +330,7 @@
                     <input type="text" id="cli-complemento" placeholder="Nº 45, Bloco B" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
             </div>
-            <button onclick="salvarCliente()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg">Salvar Cliente</button>
+            <button onclick="salvarCliente()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition">Salvar Cliente</button>
         </div>
     </div>
 
@@ -351,14 +351,10 @@
         window.vendas = [];
         window.trocoInicial = 0.00;
 
-        // OUVINTES EM TEMPO REAL (REALTIME DATABASE)
+        // OUVINTES EM TEMPO REAL
         onValue(ref(db, 'produtos'), (snapshot) => {
             const data = snapshot.val();
-            window.produtos = data ? Object.values(data) : [
-                { id: 1, nome: 'Água Galão 20L', preco: 14.00, estoque: 45, taxa: 3.00 },
-                { id: 2, nome: 'Água Garrafa 500ml (Fardo c/12)', preco: 18.00, estoque: 20, taxa: 2.50 },
-                { id: 3, nome: 'Gás de Cozinha P13', preco: 95.00, estoque: 10, taxa: 5.00 }
-            ];
+            window.produtos = data ? Object.values(data) : [];
             renderizarTudo();
             atualizarStatusConexao();
         });
@@ -366,27 +362,29 @@
         onValue(ref(db, 'clientes'), (snapshot) => {
             const data = snapshot.val();
             window.clientes = data ? Object.values(data) : [];
-            renderizarTudo();
+            renderizarClientes();
         });
 
         onValue(ref(db, 'vendas'), (snapshot) => {
             const data = snapshot.val();
-            window.vendas = data ? Object.values(data).sort((a,b) => b.id - a.id) : [];
+            window.vendas = data ? Object.values(data).sort((a,b) => Number(b.id) - Number(a.id)) : [];
             renderizarTudo();
         });
 
         onValue(ref(db, 'troco'), (snapshot) => {
-            window.trocoInicial = snapshot.val() || 0;
+            window.trocoInicial = parseFloat(snapshot.val()) || 0;
             renderizarCaixa();
         });
 
         function atualizarStatusConexao() {
             const st = document.getElementById('status-conexao');
-            st.className = "bg-emerald-600 text-white font-bold text-xs py-1 px-4 text-center";
-            st.innerHTML = "🟢 Sincronizado em Tempo Real com o Firebase Realtime!";
+            if (st) {
+                st.className = "bg-emerald-600 text-white font-bold text-xs py-1 px-4 text-center sticky top-0 z-40";
+                st.innerHTML = "🟢 Sincronizado em Tempo Real com o Firebase!";
+            }
         }
 
-        // FUNÇÕES DE SALVAR NA NUVEM
+        // OPERAÇÕES DE EXCLUSÃO E SALVAMENTO NA NUVEM
         window.dbSaveProduto = async (prod) => {
             await set(ref(db, 'produtos/' + prod.id), prod);
         };
@@ -427,8 +425,10 @@
 
             document.getElementById(`aba-${aba}`).classList.remove('hidden');
             const btn = document.getElementById(`nav-${aba}`);
-            btn.classList.add('bg-blue-600', 'text-white');
-            btn.classList.remove('text-slate-400');
+            if (btn) {
+                btn.classList.add('bg-blue-600', 'text-white');
+                btn.classList.remove('text-slate-400');
+            }
 
             renderizarTudo();
         }
@@ -444,8 +444,15 @@
         function renderizarVendasPDV() {
             const grid = document.getElementById('grid-vendas-produtos');
             if(!grid) return;
-            grid.innerHTML = (window.produtos || []).map(p => `
-                <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 flex flex-col justify-between hover:border-slate-600 transition shadow-lg">
+            const prods = window.produtos || [];
+
+            if (prods.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">Nenhum produto cadastrado no estoque.</div>`;
+                return;
+            }
+
+            grid.innerHTML = prods.map(p => `
+                <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 flex flex-col justify-between shadow-lg">
                     <div>
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-xs font-bold px-2 py-1 bg-slate-700 text-blue-400 rounded-md">ID #${p.id}</span>
@@ -456,7 +463,7 @@
                         <h3 class="font-bold text-lg text-slate-100">${p.nome}</h3>
                         <p class="text-2xl font-black text-emerald-400 mt-1">R$ ${Number(p.preco).toFixed(2)}</p>
                     </div>
-                    <button onclick="iniciarVenda('${p.id}')" ${p.estoque <= 0 ? 'disabled' : ''} class="mt-4 w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition">
+                    <button onclick="iniciarVenda('${p.id}')" ${p.estoque <= 0 ? 'disabled' : ''} class="mt-4 w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition">
                         <i class="fa-solid fa-cart-plus"></i> ${p.estoque > 0 ? 'Vender' : 'Sem Estoque'}
                     </button>
                 </div>
@@ -464,7 +471,9 @@
         }
 
         function iniciarVenda(id) {
-            produtoSelecionado = window.produtos.find(p => p.id == id);
+            produtoSelecionado = (window.produtos || []).find(p => String(p.id) === String(id));
+            if (!produtoSelecionado) return;
+
             qtdVenda = 1;
             tipoEntrega = 'retirada';
             document.getElementById('venda-qtd').innerText = '1';
@@ -482,7 +491,9 @@
 
         function carregarSelectClientes(filtro = '') {
             const select = document.getElementById('venda-cliente-select');
-            const lista = filtro ? window.clientes.filter(c => c.nome.toLowerCase().includes(filtro.toLowerCase()) || c.tel.includes(filtro)) : window.clientes;
+            const lista = filtro 
+                ? (window.clientes || []).filter(c => c.nome.toLowerCase().includes(filtro.toLowerCase()) || (c.tel && c.tel.includes(filtro))) 
+                : (window.clientes || []);
             
             select.innerHTML = `<option value="">-- Cliente Balcão / Não Cadastrado --</option>` +
                 lista.map(c => `<option value="${c.id}">${c.nome} (${c.tel || 'S/ Tel'})</option>`).join('');
@@ -496,12 +507,12 @@
         function selecionarClienteSalvo() {
             const id = document.getElementById('venda-cliente-select').value;
             if (!id) return;
-            const cli = window.clientes.find(c => c.id == id);
+            const cli = (window.clientes || []).find(c => String(c.id) === String(id));
             if (cli) {
                 setTipoEntrega('entrega');
                 document.getElementById('ent-nome').value = cli.nome;
                 document.getElementById('ent-rua-bairro').value = cli.ruaBairro;
-                document.getElementById('ent-complemento').value = cli.complemento;
+                document.getElementById('ent-complemento').value = cli.complemento || '';
             }
         }
 
@@ -567,7 +578,7 @@
         }
 
         async function confirmarVenda() {
-            if (produtoSelecionado.estoque < qtdVenda) {
+            if (!produtoSelecionado || produtoSelecionado.estoque < qtdVenda) {
                 alert('Estoque insuficiente!');
                 return;
             }
@@ -586,19 +597,19 @@
                 detalhePag = { tipo: pag, valor: total };
             }
 
-            let clienteNome = tipoEntrega === 'entrega' ? document.getElementById('ent-nome').value : 'Balcão';
+            let clienteNome = tipoEntrega === 'entrega' ? (document.getElementById('ent-nome').value || 'Cliente') : 'Balcão';
             let ruaBairro = tipoEntrega === 'entrega' ? document.getElementById('ent-rua-bairro').value : '';
             let complemento = tipoEntrega === 'entrega' ? document.getElementById('ent-complemento').value : '';
 
-            // Abater estoque na nuvem
+            // Atualiza Estoque na Nuvem
             produtoSelecionado.estoque = Number(produtoSelecionado.estoque) - Number(qtdVenda);
             await window.dbSaveProduto(produtoSelecionado);
 
-            // Criar venda na nuvem
+            // Grava Venda na Nuvem
             const venda = {
-                id: Date.now(),
+                id: String(Date.now()),
                 data: new Date().toLocaleString('pt-BR'),
-                produtoId: produtoSelecionado.id,
+                produtoId: String(produtoSelecionado.id),
                 produtoNome: produtoSelecionado.nome,
                 qtd: qtdVenda,
                 total: total,
@@ -619,16 +630,23 @@
         function renderizarEstoque() {
             const grid = document.getElementById('grid-estoque-produtos');
             if(!grid) return;
-            grid.innerHTML = (window.produtos || []).map(p => `
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+            const prods = window.produtos || [];
+
+            if (prods.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">Nenhum produto cadastrado.</div>`;
+                return;
+            }
+
+            grid.innerHTML = prods.map(p => `
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center shadow-md">
                     <div>
                         <h4 class="font-bold text-slate-100">${p.nome}</h4>
                         <p class="text-xs text-slate-400">Preço: R$ ${Number(p.preco).toFixed(2)} | Taxa: R$ ${Number(p.taxa||0).toFixed(2)}</p>
                         <p class="text-sm font-bold text-emerald-400 mt-1">Estoque: ${p.estoque} un</p>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="editarProduto('${p.id}')" class="p-2 bg-slate-700 hover:bg-slate-600 text-blue-400 rounded-lg"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="excluirProduto('${p.id}')" class="p-2 bg-slate-700 hover:bg-slate-600 text-red-400 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="editarProduto('${p.id}')" class="p-2.5 bg-slate-700 hover:bg-slate-600 text-blue-400 rounded-lg active:scale-95 transition"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="excluirProduto('${p.id}')" class="p-2.5 bg-slate-700 hover:bg-slate-600 text-red-400 rounded-lg active:scale-95 transition"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `).join('');
@@ -645,7 +663,7 @@
         }
 
         function editarProduto(id) {
-            const p = window.produtos.find(x => x.id == id);
+            const p = (window.produtos || []).find(x => String(x.id) === String(id));
             if (!p) return;
             document.getElementById('prod-id').value = p.id;
             document.getElementById('prod-nome').value = p.nome;
@@ -661,7 +679,7 @@
         }
 
         async function salvarProduto() {
-            const id = document.getElementById('prod-id').value || Date.now().toString();
+            const id = document.getElementById('prod-id').value || String(Date.now());
             const nome = document.getElementById('prod-nome').value;
             const preco = parseFloat(document.getElementById('prod-preco').value) || 0;
             const estoque = parseInt(document.getElementById('prod-estoque').value) || 0;
@@ -669,13 +687,13 @@
 
             if (!nome) return alert('Informe o nome do produto');
 
-            await window.dbSaveProduto({ id, nome, preco, estoque, taxa });
+            await window.dbSaveProduto({ id: String(id), nome, preco, estoque, taxa });
             fecharModalProduto();
         }
 
         async function excluirProduto(id) {
-            if (confirm('Excluir este produto do estoque?')) {
-                await window.dbDeleteProduto(id);
+            if (confirm('Tem certeza que deseja apagar este produto do estoque?')) {
+                await window.dbDeleteProduto(String(id));
             }
         }
 
@@ -684,14 +702,20 @@
             const grid = document.getElementById('grid-clientes');
             if(!grid) return;
             const txt = document.getElementById('busca-cliente-aba') ? document.getElementById('busca-cliente-aba').value.toLowerCase() : '';
+            const clis = window.clientes || [];
             
-            const lista = txt ? window.clientes.filter(c => c.nome.toLowerCase().includes(txt) || c.tel.includes(txt) || c.ruaBairro.toLowerCase().includes(txt)) : window.clientes;
+            const lista = txt ? clis.filter(c => c.nome.toLowerCase().includes(txt) || (c.tel && c.tel.includes(txt)) || (c.ruaBairro && c.ruaBairro.toLowerCase().includes(txt))) : clis;
+
+            if (lista.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">Nenhum cliente encontrado.</div>`;
+                return;
+            }
 
             grid.innerHTML = lista.map(c => `
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2 relative">
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2 relative shadow-md">
                     <div class="flex justify-between items-start">
                         <h4 class="font-bold text-slate-100">${c.nome}</h4>
-                        <button onclick="excluirCliente('${c.id}')" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-2 py-1 rounded transition">
+                        <button onclick="excluirCliente('${c.id}')" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-2.5 py-1 rounded transition active:scale-95">
                             <i class="fa-solid fa-trash"></i> Excluir
                         </button>
                     </div>
@@ -700,10 +724,6 @@
                     ${c.complemento ? `<p class="text-xs text-slate-400"><strong>Comp:</strong> ${c.complemento}</p>` : ''}
                 </div>
             `).join('');
-        }
-
-        function filtrarClientesAba() {
-            renderizarClientes();
         }
 
         function abrirModalCliente() {
@@ -726,14 +746,14 @@
 
             if (!nome || !ruaBairro) return alert('Preencha o Nome e a Rua/Bairro para GPS.');
 
-            const id = Date.now().toString();
+            const id = String(Date.now());
             await window.dbSaveCliente({ id, nome, tel, ruaBairro, complemento });
             fecharModalCliente();
         }
 
         async function excluirCliente(id) {
-            if (confirm('Tem certeza que deseja apagar este cliente?')) {
-                await window.dbDeleteCliente(id);
+            if (confirm('Tem certeza que deseja excluir este cliente?')) {
+                await window.dbDeleteCliente(String(id));
             }
         }
 
@@ -743,8 +763,11 @@
             if(!grid) return;
             const pendentes = (window.vendas || []).filter(v => v.tipoEntrega === 'entrega' && v.statusEntrega === 'pendente');
             
-            document.getElementById('badge-entregas').innerText = pendentes.length;
-            document.getElementById('badge-entregas').classList.toggle('hidden', pendentes.length === 0);
+            const badge = document.getElementById('badge-entregas');
+            if (badge) {
+                badge.innerText = pendentes.length;
+                badge.classList.toggle('hidden', pendentes.length === 0);
+            }
 
             if (pendentes.length === 0) {
                 grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">Nenhuma entrega pendente no momento.</div>`;
@@ -755,10 +778,10 @@
                 const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.ruaBairro)}`;
                 
                 return `
-                    <div class="bg-slate-800 p-4 rounded-xl border border-amber-500/30 space-y-3">
+                    <div class="bg-slate-800 p-4 rounded-xl border border-amber-500/30 space-y-3 shadow-md">
                         <div class="flex justify-between items-start">
                             <span class="text-xs bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">Entrega Pendente</span>
-                            <span class="text-xs text-slate-400">${v.data.split(' ')[1]}</span>
+                            <span class="text-xs text-slate-400">${v.data ? v.data.split(' ')[1] || '' : ''}</span>
                         </div>
                         <div>
                             <h4 class="font-bold text-lg text-slate-100">${v.cliente}</h4>
@@ -767,10 +790,10 @@
                             ${v.complemento ? `<p class="text-xs text-amber-300"><strong>Comp/Nº:</strong> ${v.complemento}</p>` : ''}
                         </div>
                         <div class="pt-2 border-t border-slate-700 flex flex-col gap-2">
-                            <a href="${urlMaps}" target="_blank" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-center text-sm flex items-center justify-center gap-2">
+                            <a href="${urlMaps}" target="_blank" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-center text-sm flex items-center justify-center gap-2 active:scale-95 transition">
                                 <i class="fa-solid fa-map-location-dot"></i> Abrir Rota Google Maps
                             </a>
-                            <button onclick="concluirEntrega('${v.id}')" class="w-full py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg">
+                            <button onclick="concluirEntrega('${v.id}')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg active:scale-95 transition">
                                 Concluir Entrega
                             </button>
                         </div>
@@ -780,7 +803,7 @@
         }
 
         async function concluirEntrega(id) {
-            const v = window.vendas.find(x => x.id == id);
+            const v = (window.vendas || []).find(x => String(x.id) === String(id));
             if (v) {
                 v.statusEntrega = 'concluida';
                 await window.dbSaveVenda(v);
@@ -792,22 +815,24 @@
             let din = 0, cartao = 0, pix = 0, taxas = 0, total = 0;
 
             (window.vendas || []).forEach(v => {
-                total += Number(v.total);
+                total += Number(v.total || 0);
                 taxas += Number(v.taxaEntregador || 0);
 
-                if (v.pagamento.tipo === 'dinheiro') din += Number(v.total);
-                else if (v.pagamento.tipo === 'cartao') cartao += Number(v.total);
-                else if (v.pagamento.tipo === 'pix') pix += Number(v.total);
-                else if (v.pagamento.tipo === 'misto') {
-                    din += Number(v.pagamento.dinheiro);
-                    if (v.pagamento.outroTipo === 'cartao') cartao += Number(v.pagamento.outroValor);
-                    if (v.pagamento.outroTipo === 'pix') pix += Number(v.pagamento.outroValor);
+                if (v.pagamento) {
+                    if (v.pagamento.tipo === 'dinheiro') din += Number(v.total || 0);
+                    else if (v.pagamento.tipo === 'cartao') cartao += Number(v.total || 0);
+                    else if (v.pagamento.tipo === 'pix') pix += Number(v.total || 0);
+                    else if (v.pagamento.tipo === 'misto') {
+                        din += Number(v.pagamento.dinheiro || 0);
+                        if (v.pagamento.outroTipo === 'cartao') cartao += Number(v.pagamento.outroValor || 0);
+                        if (v.pagamento.outroTipo === 'pix') pix += Number(v.pagamento.outroValor || 0);
+                    }
                 }
             });
 
             if(document.getElementById('c-troco')) {
-                document.getElementById('c-troco').innerText = `R$ ${window.trocoInicial.toFixed(2)}`;
-                document.getElementById('c-dinheiro').innerText = `R$ ${(din + window.trocoInicial).toFixed(2)}`;
+                document.getElementById('c-troco').innerText = `R$ ${(window.trocoInicial || 0).toFixed(2)}`;
+                document.getElementById('c-dinheiro').innerText = `R$ ${(din + (window.trocoInicial || 0)).toFixed(2)}`;
                 document.getElementById('c-cartao').innerText = `R$ ${cartao.toFixed(2)}`;
                 document.getElementById('c-pix').innerText = `R$ ${pix.toFixed(2)}`;
                 document.getElementById('c-taxas').innerText = `R$ ${taxas.toFixed(2)}`;
@@ -816,15 +841,22 @@
 
             const tbody = document.getElementById('lista-vendas');
             if(!tbody) return;
-            tbody.innerHTML = (window.vendas || []).map(v => `
+
+            const vns = window.vendas || [];
+            if (vns.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nenhuma venda registrada hoje.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = vns.map(v => `
                 <tr class="hover:bg-slate-700/30">
-                    <td class="p-3 text-xs text-slate-400">${v.data}</td>
+                    <td class="p-3 text-xs text-slate-400">${v.data || ''}</td>
                     <td class="p-3 font-semibold">${v.qtd}x ${v.produtoNome}</td>
                     <td class="p-3 text-xs">${v.cliente} (${v.tipoEntrega})</td>
-                    <td class="p-3 text-xs uppercase font-bold text-blue-400">${v.pagamento.tipo}</td>
-                    <td class="p-3 font-bold text-emerald-400">R$ ${Number(v.total).toFixed(2)}</td>
+                    <td class="p-3 text-xs uppercase font-bold text-blue-400">${v.pagamento ? v.pagamento.tipo : '-'}</td>
+                    <td class="p-3 font-bold text-emerald-400">R$ ${Number(v.total || 0).toFixed(2)}</td>
                     <td class="p-3 text-right">
-                        <button onclick="cancelarVenda('${v.id}')" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-2 py-1 rounded transition">
+                        <button onclick="cancelarVenda('${v.id}')" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-2.5 py-1 rounded transition active:scale-95">
                             🚫 Cancelar / Estornar
                         </button>
                     </td>
@@ -833,32 +865,35 @@
         }
 
         async function abrirModalTroco() {
-            let val = prompt('Informe o Saldo Inicial / Troco do Caixa (R$):', window.trocoInicial);
+            let val = prompt('Informe o Saldo Inicial / Troco do Caixa (R$):', window.trocoInicial || 0);
             if (val !== null) {
                 await window.dbSaveTroco(parseFloat(val) || 0);
             }
         }
 
         async function fecharCaixa() {
-            if (confirm('Deseja apagar todo o histórico do caixa e reiniciar?')) {
-                for (let v of window.vendas) {
-                    await window.dbDeleteVenda(v.id);
+            if (confirm('Deseja zerar todo o histórico de vendas e fechar o caixa?')) {
+                const vns = window.vendas || [];
+                for (let v of vns) {
+                    await window.dbDeleteVenda(String(v.id));
                 }
                 await window.dbSaveTroco(0);
             }
         }
 
         async function cancelarVenda(id) {
-            const v = window.vendas.find(x => x.id == id);
+            const v = (window.vendas || []).find(x => String(x.id) === String(id));
             if (!v) return;
 
-            if (confirm(`Cancelar venda de ${v.qtd}x ${v.produtoNome}? O estoque será devolvido na nuvem.`)) {
-                const p = window.produtos.find(x => x.id == v.produtoId);
+            if (confirm(`Cancelar a venda de ${v.qtd}x ${v.produtoNome}? O valor será devolvido ao caixa e os produtos retornarão ao estoque.`)) {
+                // Devolve ao estoque na nuvem
+                const p = (window.produtos || []).find(x => String(x.id) === String(v.produtoId));
                 if (p) {
                     p.estoque = Number(p.estoque) + Number(v.qtd);
                     await window.dbSaveProduto(p);
                 }
-                await window.dbDeleteVenda(id);
+                // Deleta a venda na nuvem
+                await window.dbDeleteVenda(String(id));
             }
         }
     </script>
