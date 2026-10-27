@@ -21,6 +21,12 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen pb-24 md:pb-6 font-sans select-none">
 
+    <!-- Notificação Flutuante de Venda Realizada (Toast) -->
+    <div id="toast-venda" class="fixed top-14 left-1/2 transform -translate-x-1/2 z-50 bg-emerald-600 text-white font-bold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px]">
+        <i class="fa-solid fa-circle-check text-xl"></i>
+        <span id="toast-mensagem">Venda realizada com sucesso!</span>
+    </div>
+
     <!-- Status da Conexão Firebase -->
     <div id="status-conexao" class="bg-amber-500 text-slate-900 font-bold text-xs py-1 px-4 text-center sticky top-0 z-40">
         ⚡ Conectando ao Firebase Realtime Database...
@@ -120,7 +126,7 @@
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
                     <h2 class="text-lg font-bold text-amber-400">Painel do Entregador (Tempo Real)</h2>
-                    <p class="text-xs text-slate-400">Ajuste a forma de pagamento recebida no local e conclua</p>
+                    <p class="text-xs text-slate-400">Ajuste o pagamento, chame no WhatsApp se precisar e conclua</p>
                 </div>
                 <button id="btn-ativar-notificacao" onclick="solicitarPermissaoNotificacao()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md active:scale-95 transition">
                     <i class="fa-solid fa-bell"></i> Ativar Sons e Notificações
@@ -159,15 +165,15 @@
             </div>
 
             <div class="flex justify-end">
-                <button onclick="fecharCaixa()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-4 py-2 rounded-lg text-sm font-semibold transition active:scale-95">
-                    <i class="fa-solid fa-lock"></i> Reiniciar / Fechar Caixa
+                <button onclick="fecharCaixa()" class="bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 px-4 py-2 rounded-lg text-sm font-semibold transition active:scale-95">
+                    <i class="fa-solid fa-lock"></i> Fechar Caixa do Dia (Zerar Totais do Dia)
                 </button>
             </div>
 
             <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                 <div class="p-4 border-b border-slate-700 font-bold flex justify-between items-center">
-                    <span>Histórico de Vendas</span>
-                    <span class="text-xs text-slate-400 font-normal">Estornos estornam os valores e devolvem o estoque</span>
+                    <span>Histórico Permanente de Vendas</span>
+                    <span class="text-xs text-slate-400 font-normal">O histórico continua salvo mesmo ao fechar o caixa</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -341,8 +347,8 @@
                     <input type="text" id="cli-nome" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400">Telefone / WhatsApp</label>
-                    <input type="text" id="cli-tel" placeholder="(21) 99999-9999" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
+                    <label class="text-xs text-slate-400">Telefone / WhatsApp *</label>
+                    <input type="text" id="cli-tel" placeholder="21999999999 (Apenas números com DDD)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
                 <div>
                     <label class="text-xs text-slate-400">Rua e Bairro (Para GPS / Maps) *</label>
@@ -373,9 +379,9 @@
         window.clientes = [];
         window.vendas = [];
         window.trocoInicial = 0.00;
+        window.dataInicioCaixa = null;
         let qtdEntregasAnterior = -1;
 
-        // OUVINTES EM TEMPO REAL
         onValue(ref(db, 'produtos'), (snapshot) => {
             const data = snapshot.val();
             window.produtos = data ? Object.values(data) : [];
@@ -395,7 +401,6 @@
             const listaVendas = data ? Object.values(data).sort((a,b) => Number(b.id) - Number(a.id)) : [];
             window.vendas = listaVendas;
 
-            // Checa se surgiu uma nova entrega para notificar o motoboy
             const entregasAtuais = listaVendas.filter(v => v.tipoEntrega === 'entrega' && v.statusEntrega === 'pendente');
             if (qtdEntregasAnterior !== -1 && entregasAtuais.length > qtdEntregasAnterior) {
                 const ultimaEntrega = entregasAtuais[0];
@@ -411,6 +416,11 @@
             renderizarCaixa();
         });
 
+        onValue(ref(db, 'dataInicioCaixa'), (snapshot) => {
+            window.dataInicioCaixa = snapshot.val() || null;
+            renderizarCaixa();
+        });
+
         function atualizarStatusConexao() {
             const st = document.getElementById('status-conexao');
             if (st) {
@@ -419,7 +429,6 @@
             }
         }
 
-        // OPERAÇÕES DE EXCLUSÃO E SALVAMENTO NA NUVEM
         window.dbSaveProduto = async (prod) => {
             await set(ref(db, 'produtos/' + prod.id), prod);
         };
@@ -444,6 +453,10 @@
         window.dbSaveTroco = async (val) => {
             await set(ref(db, 'troco'), val);
         };
+
+        window.dbSaveDataInicioCaixa = async (timestamp) => {
+            await set(ref(db, 'dataInicioCaixa'), timestamp);
+        };
     </script>
 
     <script>
@@ -453,7 +466,20 @@
         let categoriaAtivaPDV = 'Todos';
         let categoriaAtivaEstoque = 'Todos';
 
-        // NOTIFICAÇÃO E SOM PARA O ENTREGADOR
+        function mostrarToast(mensagem) {
+            const toast = document.getElementById('toast-venda');
+            const txt = document.getElementById('toast-mensagem');
+            if(txt) txt.innerText = mensagem;
+            
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            }, 3000);
+        }
+
         function solicitarPermissaoNotificacao() {
             tocarSomNotificacao();
             if ("Notification" in window) {
@@ -477,7 +503,7 @@
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Tom A5
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
@@ -645,6 +671,7 @@
                 document.getElementById('ent-nome').value = cli.nome;
                 document.getElementById('ent-rua-bairro').value = cli.ruaBairro;
                 document.getElementById('ent-complemento').value = cli.complemento || '';
+                window.clienteTelSelecionado = cli.tel || '';
             }
         }
 
@@ -732,14 +759,24 @@
             let clienteNome = tipoEntrega === 'entrega' ? (document.getElementById('ent-nome').value || 'Cliente') : 'Balcão';
             let ruaBairro = tipoEntrega === 'entrega' ? document.getElementById('ent-rua-bairro').value : '';
             let complemento = tipoEntrega === 'entrega' ? document.getElementById('ent-complemento').value : '';
+            
+            let clienteTel = window.clienteTelSelecionado || '';
+            if (!clienteTel && tipoEntrega === 'entrega') {
+                const cliEncontrado = (window.clientes || []).find(c => c.nome.toLowerCase() === clienteNome.toLowerCase());
+                if (cliEncontrado) clienteTel = cliEncontrado.tel || '';
+            }
 
-            // Atualiza Estoque na Nuvem
+            if (!window.dataInicioCaixa) {
+                await window.dbSaveDataInicioCaixa(Date.now());
+            }
+
             produtoSelecionado.estoque = Number(produtoSelecionado.estoque) - Number(qtdVenda);
             await window.dbSaveProduto(produtoSelecionado);
 
-            // Grava Venda na Nuvem
+            const timestampAgora = Date.now();
             const venda = {
-                id: String(Date.now()),
+                id: String(timestampAgora),
+                timestamp: timestampAgora,
                 data: new Date().toLocaleString('pt-BR'),
                 produtoId: String(produtoSelecionado.id),
                 produtoNome: produtoSelecionado.nome,
@@ -748,6 +785,7 @@
                 taxaEntregador: taxa,
                 tipoEntrega: tipoEntrega,
                 cliente: clienteNome,
+                clienteTel: clienteTel,
                 ruaBairro: ruaBairro,
                 complemento: complemento,
                 pagamento: detalhePag,
@@ -755,7 +793,11 @@
             };
 
             await window.dbSaveVenda(venda);
+            window.clienteTelSelecionado = '';
             fecharModalVenda();
+
+            // Mostra o aviso visual de venda realizada na tela
+            mostrarToast(`✅ Venda de ${qtdVenda}x ${produtoSelecionado.nome} realizada com sucesso!`);
         }
 
         // ESTOQUE
@@ -851,19 +893,27 @@
                 return;
             }
 
-            grid.innerHTML = lista.map(c => `
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2 relative shadow-md">
-                    <div class="flex justify-between items-start">
-                        <h4 class="font-bold text-slate-100">${c.nome}</h4>
-                        <button onclick="excluirCliente('${c.id}')" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-2.5 py-1 rounded transition active:scale-95">
-                            <i class="fa-solid fa-trash"></i> Excluir
-                        </button>
+            grid.innerHTML = lista.map(c => {
+                const telLimpo = c.tel ? c.tel.replace(/\D/g, '') : '';
+                const btnWpp = telLimpo ? `<a href="https://wa.me/55${telLimpo}" target="_blank" class="text-xs bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white px-2.5 py-1 rounded transition active:scale-95 flex items-center gap-1 font-bold"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : '';
+
+                return `
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2.5 relative shadow-md">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-slate-100 text-base">${c.nome}</h4>
+                            <button onclick="excluirCliente('${c.id}')" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-2 py-1 rounded transition active:scale-95">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <p class="text-xs text-slate-400"><i class="fa-solid fa-phone text-blue-400"></i> ${c.tel || 'Não informado'}</p>
+                            ${btnWpp}
+                        </div>
+                        <p class="text-xs text-slate-300"><i class="fa-solid fa-location-dot text-amber-400"></i> <strong>Rua/Bairro:</strong> ${c.ruaBairro}</p>
+                        ${c.complemento ? `<p class="text-xs text-slate-400"><strong>Comp:</strong> ${c.complemento}</p>` : ''}
                     </div>
-                    <p class="text-xs text-slate-400"><i class="fa-solid fa-phone text-blue-400"></i> ${c.tel || 'Não informado'}</p>
-                    <p class="text-xs text-slate-300"><i class="fa-solid fa-location-dot text-amber-400"></i> <strong>Rua/Bairro:</strong> ${c.ruaBairro}</p>
-                    ${c.complemento ? `<p class="text-xs text-slate-400"><strong>Comp:</strong> ${c.complemento}</p>` : ''}
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function abrirModalCliente() {
@@ -917,6 +967,8 @@
             grid.innerHTML = pendentes.map(v => {
                 const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.ruaBairro)}`;
                 const pagTipo = v.pagamento ? v.pagamento.tipo : 'pendente';
+                const telLimpo = v.clienteTel ? v.clienteTel.replace(/\D/g, '') : '';
+                const btnWppEntregador = telLimpo ? `<a href="https://wa.me/55${telLimpo}?text=Olá%20${encodeURIComponent(v.cliente)},%20sou%20o%20entregador%20da%20loja%20estou%20a%20caminho%20com%20o%20seu%20pedido!" target="_blank" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-center text-xs flex items-center justify-center gap-2 active:scale-95 transition"><i class="fa-brands fa-whatsapp text-sm"></i> Chamar Cliente no WhatsApp</a>` : '';
                 
                 return `
                     <div class="bg-slate-800 p-4 rounded-xl border border-amber-500/30 space-y-3 shadow-md">
@@ -942,10 +994,11 @@
                         </div>
 
                         <div class="pt-2 border-t border-slate-700 flex flex-col gap-2">
-                            <a href="${urlMaps}" target="_blank" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-center text-sm flex items-center justify-center gap-2 active:scale-95 transition">
+                            ${btnWppEntregador}
+                            <a href="${urlMaps}" target="_blank" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-center text-sm flex items-center justify-center gap-2 active:scale-95 transition">
                                 <i class="fa-solid fa-map-location-dot"></i> Abrir Rota Google Maps
                             </a>
-                            <button onclick="concluirEntrega('${v.id}')" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg active:scale-95 transition">
+                            <button onclick="concluirEntrega('${v.id}')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded-lg active:scale-95 transition">
                                 ✓ Concluir e Confirmar Entrega
                             </button>
                         </div>
@@ -974,8 +1027,14 @@
         // CAIXA
         function renderizarCaixa() {
             let din = 0, cartao = 0, pix = 0, taxas = 0, total = 0;
+            const dataInicio = window.dataInicioCaixa ? Number(window.dataInicioCaixa) : 0;
 
-            (window.vendas || []).forEach(v => {
+            const vendasCaixaAtual = (window.vendas || []).filter(v => {
+                const tsVenda = v.timestamp || Number(v.id);
+                return tsVenda >= dataInicio;
+            });
+
+            vendasCaixaAtual.forEach(v => {
                 total += Number(v.total || 0);
                 taxas += Number(v.taxaEntregador || 0);
 
@@ -1005,7 +1064,7 @@
 
             const vns = window.vendas || [];
             if (vns.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nenhuma venda registrada hoje.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nenhuma venda registrada ainda.</td></tr>`;
                 return;
             }
 
@@ -1033,12 +1092,10 @@
         }
 
         async function fecharCaixa() {
-            if (confirm('Deseja zerar todo o histórico de vendas e fechar o caixa?')) {
-                const vns = window.vendas || [];
-                for (let v of vns) {
-                    await window.dbDeleteVenda(String(v.id));
-                }
+            if (confirm('Deseja fechar o caixa do dia? Isso zerará os totais acumulados do dia para abrir o próximo, mantendo todo o histórico de vendas guardado.')) {
+                await window.dbSaveDataInicioCaixa(Date.now());
                 await window.dbSaveTroco(0);
+                alert('Caixa fechado com sucesso! Os totais foram zerados para o novo turno, e o histórico de vendas foi preservado.');
             }
         }
 
