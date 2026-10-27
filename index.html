@@ -72,21 +72,37 @@
     <main class="max-w-7xl mx-auto p-4 md:p-6">
 
         <!-- ABA VENDER (PDV) -->
-        <section id="aba-vender" class="aba-conteudo space-y-6">
+        <section id="aba-vender" class="aba-conteudo space-y-4">
+            <!-- Barra de Busca de Produtos -->
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
+                <input type="text" id="busca-produto-pdv" oninput="renderizarVendasPDV()" placeholder="🔍 Pesquisar produto por nome..." class="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-blue-500 shadow-md">
+            </div>
+
+            <!-- Filtros por Categoria no PDV -->
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="categorias-pdv">
+                <!-- Botões de Categoria inseridos via JS -->
+            </div>
+
+            <!-- Grid de Produtos no PDV -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="grid-vendas-produtos"></div>
         </section>
 
         <!-- ABA PRODUTOS (ESTOQUE) -->
-        <section id="aba-produtos" class="aba-conteudo hidden space-y-6">
+        <section id="aba-produtos" class="aba-conteudo hidden space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <div>
                     <h2 class="text-lg font-bold">Gerenciamento de Estoque</h2>
-                    <p class="text-xs text-slate-400">Cadastre e ajuste preços ou quantidades</p>
+                    <p class="text-xs text-slate-400">Cadastre, edite e categorize seus produtos</p>
                 </div>
                 <button onclick="abrirModalProduto()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
                     <i class="fa-solid fa-plus"></i> Novo Produto
                 </button>
             </div>
+
+            <!-- Filtro de Categoria no Estoque -->
+            <div class="flex gap-2 overflow-x-auto pb-2" id="categorias-estoque"></div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-estoque-produtos"></div>
         </section>
 
@@ -283,8 +299,18 @@
             <input type="hidden" id="prod-id">
             <div class="space-y-3">
                 <div>
-                    <label class="text-xs text-slate-400">Nome do Produto</label>
+                    <label class="text-xs text-slate-400">Nome do Produto *</label>
                     <input type="text" id="prod-nome" placeholder="Ex: Água Mineral 20L" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400">Categoria</label>
+                    <select id="prod-categoria" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100">
+                        <option value="Águas">💧 Águas</option>
+                        <option value="Gás">🔥 Gás</option>
+                        <option value="Bebidas">🥤 Bebidas</option>
+                        <option value="Alimentos">🍿 Alimentos</option>
+                        <option value="Outros">📦 Outros</option>
+                    </select>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -355,6 +381,7 @@
         onValue(ref(db, 'produtos'), (snapshot) => {
             const data = snapshot.val();
             window.produtos = data ? Object.values(data) : [];
+            renderizarCategorias();
             renderizarTudo();
             atualizarStatusConexao();
         });
@@ -415,6 +442,8 @@
         let produtoSelecionado = null;
         let qtdVenda = 1;
         let tipoEntrega = 'retirada';
+        let categoriaAtivaPDV = 'Todos';
+        let categoriaAtivaEstoque = 'Todos';
 
         function mudarAba(aba) {
             document.querySelectorAll('.aba-conteudo').forEach(el => el.classList.add('hidden'));
@@ -433,6 +462,48 @@
             renderizarTudo();
         }
 
+        function renderizarCategorias() {
+            const prods = window.produtos || [];
+            let cats = ['Todos'];
+            
+            prods.forEach(p => {
+                let cat = p.categoria || 'Outros';
+                if (!cats.includes(cat)) cats.push(cat);
+            });
+
+            // Categorias PDV
+            const divPdv = document.getElementById('categorias-pdv');
+            if (divPdv) {
+                divPdv.innerHTML = cats.map(c => `
+                    <button onclick="filtrarCategoriaPDV('${c}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${categoriaAtivaPDV === c ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">
+                        ${c}
+                    </button>
+                `).join('');
+            }
+
+            // Categorias Estoque
+            const divEst = document.getElementById('categorias-estoque');
+            if (divEst) {
+                divEst.innerHTML = cats.map(c => `
+                    <button onclick="filtrarCategoriaEstoque('${c}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${categoriaAtivaEstoque === c ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">
+                        ${c}
+                    </button>
+                `).join('');
+            }
+        }
+
+        function filtrarCategoriaPDV(cat) {
+            categoriaAtivaPDV = cat;
+            renderizarCategorias();
+            renderizarVendasPDV();
+        }
+
+        function filtrarCategoriaEstoque(cat) {
+            categoriaAtivaEstoque = cat;
+            renderizarCategorias();
+            renderizarEstoque();
+        }
+
         function renderizarTudo() {
             renderizarVendasPDV();
             renderizarEstoque();
@@ -444,10 +515,22 @@
         function renderizarVendasPDV() {
             const grid = document.getElementById('grid-vendas-produtos');
             if(!grid) return;
-            const prods = window.produtos || [];
+            
+            let prods = window.produtos || [];
+            const txtBusca = document.getElementById('busca-produto-pdv') ? document.getElementById('busca-produto-pdv').value.toLowerCase() : '';
+
+            // Filtro de Categoria
+            if (categoriaAtivaPDV !== 'Todos') {
+                prods = prods.filter(p => (p.categoria || 'Outros') === categoriaAtivaPDV);
+            }
+
+            // Filtro de Busca de Texto
+            if (txtBusca) {
+                prods = prods.filter(p => p.nome.toLowerCase().includes(txtBusca));
+            }
 
             if (prods.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">Nenhum produto cadastrado no estoque.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">Nenhum produto encontrado.</div>`;
                 return;
             }
 
@@ -455,7 +538,7 @@
                 <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 flex flex-col justify-between shadow-lg">
                     <div>
                         <div class="flex justify-between items-start mb-2">
-                            <span class="text-xs font-bold px-2 py-1 bg-slate-700 text-blue-400 rounded-md">ID #${p.id}</span>
+                            <span class="text-[10px] uppercase font-extrabold px-2 py-0.5 bg-slate-700 text-blue-400 rounded-md">${p.categoria || 'Outros'}</span>
                             <span class="text-xs font-semibold px-2 py-1 ${p.estoque > 5 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'} rounded-md">
                                 ${p.estoque} em estoque
                             </span>
@@ -630,17 +713,22 @@
         function renderizarEstoque() {
             const grid = document.getElementById('grid-estoque-produtos');
             if(!grid) return;
-            const prods = window.produtos || [];
+            let prods = window.produtos || [];
+
+            if (categoriaAtivaEstoque !== 'Todos') {
+                prods = prods.filter(p => (p.categoria || 'Outros') === categoriaAtivaEstoque);
+            }
 
             if (prods.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">Nenhum produto cadastrado.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">Nenhum produto cadastrado nesta categoria.</div>`;
                 return;
             }
 
             grid.innerHTML = prods.map(p => `
                 <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center shadow-md">
                     <div>
-                        <h4 class="font-bold text-slate-100">${p.nome}</h4>
+                        <span class="text-[10px] uppercase font-extrabold px-2 py-0.5 bg-slate-700 text-blue-400 rounded-md">${p.categoria || 'Outros'}</span>
+                        <h4 class="font-bold text-slate-100 mt-1">${p.nome}</h4>
                         <p class="text-xs text-slate-400">Preço: R$ ${Number(p.preco).toFixed(2)} | Taxa: R$ ${Number(p.taxa||0).toFixed(2)}</p>
                         <p class="text-sm font-bold text-emerald-400 mt-1">Estoque: ${p.estoque} un</p>
                     </div>
@@ -655,6 +743,7 @@
         function abrirModalProduto() {
             document.getElementById('prod-id').value = '';
             document.getElementById('prod-nome').value = '';
+            document.getElementById('prod-categoria').value = 'Águas';
             document.getElementById('prod-preco').value = '';
             document.getElementById('prod-estoque').value = '';
             document.getElementById('prod-taxa').value = '';
@@ -667,6 +756,7 @@
             if (!p) return;
             document.getElementById('prod-id').value = p.id;
             document.getElementById('prod-nome').value = p.nome;
+            document.getElementById('prod-categoria').value = p.categoria || 'Outros';
             document.getElementById('prod-preco').value = p.preco;
             document.getElementById('prod-estoque').value = p.estoque;
             document.getElementById('prod-taxa').value = p.taxa || 0;
@@ -681,13 +771,14 @@
         async function salvarProduto() {
             const id = document.getElementById('prod-id').value || String(Date.now());
             const nome = document.getElementById('prod-nome').value;
+            const categoria = document.getElementById('prod-categoria').value || 'Outros';
             const preco = parseFloat(document.getElementById('prod-preco').value) || 0;
             const estoque = parseInt(document.getElementById('prod-estoque').value) || 0;
             const taxa = parseFloat(document.getElementById('prod-taxa').value) || 0;
 
             if (!nome) return alert('Informe o nome do produto');
 
-            await window.dbSaveProduto({ id: String(id), nome, preco, estoque, taxa });
+            await window.dbSaveProduto({ id: String(id), nome, categoria, preco, estoque, taxa });
             fecharModalProduto();
         }
 
@@ -886,13 +977,11 @@
             if (!v) return;
 
             if (confirm(`Cancelar a venda de ${v.qtd}x ${v.produtoNome}? O valor será devolvido ao caixa e os produtos retornarão ao estoque.`)) {
-                // Devolve ao estoque na nuvem
                 const p = (window.produtos || []).find(x => String(x.id) === String(v.produtoId));
                 if (p) {
                     p.estoque = Number(p.estoque) + Number(v.qtd);
                     await window.dbSaveProduto(p);
                 }
-                // Deleta a venda na nuvem
                 await window.dbDeleteVenda(String(id));
             }
         }
