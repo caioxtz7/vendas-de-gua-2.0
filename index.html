@@ -19,9 +19,9 @@
         }
     </script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-24 md:pb-6 font-sans select-none">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-28 md:pb-6 font-sans select-none">
 
-    <!-- Notificação Flutuante de Venda Realizada (Toast) -->
+    <!-- Notificação Flutuante (Toast) -->
     <div id="toast-venda" class="fixed top-14 left-1/2 transform -translate-x-1/2 z-50 bg-emerald-600 text-white font-bold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px]">
         <i class="fa-solid fa-circle-check text-xl"></i>
         <span id="toast-mensagem">Venda realizada com sucesso!</span>
@@ -75,16 +75,49 @@
     </nav>
 
     <!-- Conteúdo Principal -->
-    <main class="max-w-7xl mx-auto p-4 md:p-6">
+    <main class="max-w-7xl mx-auto p-4 md:p-6 pb-32">
 
         <!-- ABA VENDER (PDV) -->
         <section id="aba-vender" class="aba-conteudo space-y-4">
-            <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
-                <input type="text" id="busca-produto-pdv" oninput="renderizarVendasPDV()" placeholder="🔍 Pesquisar produto por nome..." class="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-blue-500 shadow-md">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Coluna de Produtos (Esquerda / 2 colunas no desktop) -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
+                        <input type="text" id="busca-produto-pdv" oninput="renderizarVendasPDV()" placeholder="🔍 Pesquisar produto por nome..." class="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-blue-500 shadow-md">
+                    </div>
+                    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="categorias-pdv"></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" id="grid-vendas-produtos"></div>
+                </div>
+
+                <!-- Coluna do Carrinho Atual (Direita / 1 coluna no desktop) -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between shadow-xl h-fit sticky top-20">
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                            <h2 class="font-bold text-base flex items-center gap-2">
+                                <i class="fa-solid fa-cart-shopping text-blue-400"></i> Carrinho Atual
+                            </h2>
+                            <button onclick="limparCarrinho()" class="text-xs text-red-400 hover:text-red-300">Limpar</button>
+                        </div>
+
+                        <!-- Lista de itens no carrinho -->
+                        <div id="lista-carrinho" class="space-y-2 max-h-[35vh] overflow-y-auto pr-1">
+                            <div class="text-center py-6 text-slate-500 text-sm">Seu carrinho está vazio. Clique em um produto para adicionar.</div>
+                        </div>
+                    </div>
+
+                    <!-- Totais e Botão Avançar -->
+                    <div class="border-t border-slate-700 pt-3 mt-4 space-y-3">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-400">Subtotal:</span>
+                            <span id="carrinho-subtotal" class="font-bold text-slate-200">R$ 0,00</span>
+                        </div>
+                        <button onclick="abrirModalFinalizar()" id="btn-ir-pagamento" disabled class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-arrow-right"></i> Avançar para Pagamento
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="categorias-pdv"></div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="grid-vendas-produtos"></div>
         </section>
 
         <!-- ABA PRODUTOS (ESTOQUE) -->
@@ -180,7 +213,7 @@
                         <thead class="bg-slate-900/50 text-slate-400 text-xs uppercase">
                             <tr>
                                 <th class="p-3">Data/Hora</th>
-                                <th class="p-3">Produto</th>
+                                <th class="p-3">Produtos</th>
                                 <th class="p-3">Cliente / Tipo</th>
                                 <th class="p-3">Pagamento</th>
                                 <th class="p-3">Total</th>
@@ -199,7 +232,7 @@
     <div id="modal-venda" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 max-w-lg w-full rounded-2xl border border-slate-700 p-5 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                <h3 class="font-bold text-lg">Finalizar Venda</h3>
+                <h3 class="font-bold text-lg">Finalizar Venda Multi-itens</h3>
                 <button onclick="fecharModalVenda()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
 
@@ -228,7 +261,7 @@
                     </div>
                     <div>
                         <label class="text-xs text-slate-400">Taxa do Entregador (R$)</label>
-                        <input type="number" step="0.50" id="ent-taxa" oninput="calcularTotalVenda()" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm">
+                        <input type="number" step="0.50" id="ent-taxa" oninput="atualizarTotaisModal()" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm" value="0">
                     </div>
                 </div>
                 <div>
@@ -238,15 +271,6 @@
                 <div>
                     <label class="text-xs text-slate-400">Nº / Apto / Complemento (Para o entregador)</label>
                     <input type="text" id="ent-complemento" placeholder="Ex: Nº 123, Apto 201" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm">
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-700">
-                <span class="text-sm font-medium">Quantidade:</span>
-                <div class="flex items-center gap-3">
-                    <button onclick="alterarQtdVenda(-1)" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center font-bold text-xl text-slate-300 active:bg-slate-700">-</button>
-                    <span id="venda-qtd" class="font-bold text-lg w-6 text-center">1</span>
-                    <button onclick="alterarQtdVenda(1)" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center font-bold text-xl text-slate-300 active:bg-slate-700">+</button>
                 </div>
             </div>
 
@@ -460,8 +484,7 @@
     </script>
 
     <script>
-        let produtoSelecionado = null;
-        let qtdVenda = 1;
+        window.carrinho = [];
         let tipoEntrega = 'retirada';
         let categoriaAtivaPDV = 'Todos';
         let categoriaAtivaEstoque = 'Todos';
@@ -618,26 +641,113 @@
                                 ${p.estoque} em estoque
                             </span>
                         </div>
-                        <h3 class="font-bold text-lg text-slate-100">${p.nome}</h3>
-                        <p class="text-2xl font-black text-emerald-400 mt-1">R$ ${Number(p.preco).toFixed(2)}</p>
+                        <h3 class="font-bold text-base text-slate-100">${p.nome}</h3>
+                        <p class="text-xl font-black text-emerald-400 mt-1">R$ ${Number(p.preco).toFixed(2)}</p>
                     </div>
-                    <button onclick="iniciarVenda('${p.id}')" ${p.estoque <= 0 ? 'disabled' : ''} class="mt-4 w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition">
-                        <i class="fa-solid fa-cart-plus"></i> ${p.estoque > 0 ? 'Vender' : 'Sem Estoque'}
+                    <button onclick="adicionarAoCarrinho('${p.id}')" ${p.estoque <= 0 ? 'disabled' : ''} class="mt-4 w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition text-sm">
+                        <i class="fa-solid fa-cart-plus"></i> ${p.estoque > 0 ? 'Adicionar' : 'Sem Estoque'}
                     </button>
                 </div>
             `).join('');
         }
 
-        function iniciarVenda(id) {
-            produtoSelecionado = (window.produtos || []).find(p => String(p.id) === String(id));
-            if (!produtoSelecionado) return;
+        // LÓGICA DO CARRINHO MULTI-ITENS
+        function adicionarAoCarrinho(id) {
+            const p = (window.produtos || []).find(x => String(x.id) === String(id));
+            if (!p || p.estoque <= 0) return;
 
-            qtdVenda = 1;
-            tipoEntrega = 'retirada';
-            document.getElementById('venda-qtd').innerText = '1';
+            const itemExistente = window.carrinho.find(item => String(item.id) === String(id));
+            if (itemExistente) {
+                if (itemExistente.qtd < p.estoque) {
+                    itemExistente.qtd++;
+                } else {
+                    alert('Quantidade máxima em estoque atingida para este item.');
+                    return;
+                }
+            } else {
+                window.carrinho.push({
+                    id: p.id,
+                    nome: p.nome,
+                    preco: Number(p.preco),
+                    qtd: 1,
+                    estoqueMax: p.estoque,
+                    taxa: Number(p.taxa || 0)
+                });
+            }
+            renderizarCarrinho();
+        }
+
+        function alterarQtdCarrinho(id, delta) {
+            const item = window.carrinho.find(x => String(x.id) === String(id));
+            if (!item) return;
+
+            const novaQtd = item.qtd + delta;
+            if (novaQtd > 0 && novaQtd <= item.estoqueMax) {
+                item.qtd = novaQtd;
+            } else if (novaQtd <= 0) {
+                window.carrinho = window.carrinho.filter(x => String(x.id) !== String(id));
+            } else {
+                alert('Estoque máximo atingido.');
+            }
+            renderizarCarrinho();
+        }
+
+        function removerItemCarrinho(id) {
+            window.carrinho = window.carrinho.filter(x => String(x.id) !== String(id));
+            renderizarCarrinho();
+        }
+
+        function limparCarrinho() {
+            window.carrinho = [];
+            renderizarCarrinho();
+        }
+
+        function renderizarCarrinho() {
+            const lista = document.getElementById('lista-carrinho');
+            const subtotalEl = document.getElementById('carrinho-subtotal');
+            const btnAvancar = document.getElementById('btn-ir-pagamento');
+            if (!lista) return;
+
+            if (window.carrinho.length === 0) {
+                lista.innerHTML = `<div class="text-center py-6 text-slate-500 text-sm">Seu carrinho está vazio. Clique em um produto para adicionar.</div>`;
+                subtotalEl.innerText = `R$ 0,00`;
+                btnAvancar.disabled = true;
+                return;
+            }
+
+            let subtotal = 0;
+            lista.innerHTML = window.carrinho.map(item => {
+                let totalItem = item.preco * item.qtd;
+                subtotal += totalItem;
+
+                return `
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex justify-between items-center gap-2">
+                        <div class="overflow-hidden">
+                            <h4 class="font-bold text-sm text-slate-100 truncate">${item.nome}</h4>
+                            <p class="text-xs text-emerald-400 font-semibold">R$ ${item.preco.toFixed(2)} un</p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <div class="flex items-center gap-1.5 bg-slate-800 px-2 py-1 rounded-lg">
+                                <button onclick="alterarQtdCarrinho('${item.id}', -1)" class="w-6 h-6 bg-slate-700 rounded flex items-center justify-center font-bold text-xs">-</button>
+                                <span class="font-bold text-xs w-4 text-center">${item.qtd}</span>
+                                <button onclick="alterarQtdCarrinho('${item.id}', 1)" class="w-6 h-6 bg-slate-700 rounded flex items-center justify-center font-bold text-xs">+</button>
+                            </div>
+                            <button onclick="removerItemCarrinho('${item.id}')" class="text-red-400 hover:text-red-300 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            subtotalEl.innerText = `R$ ${subtotal.toFixed(2)}`;
+            btnAvancar.disabled = false;
+        }
+
+        function abrirModalFinalizar() {
+            if (window.carrinho.length === 0) return;
+
             document.getElementById('venda-busca-cliente').value = '';
             document.getElementById('ent-nome').value = '';
-            document.getElementById('ent-taxa').value = produtoSelecionado.taxa || 0;
+            document.getElementById('ent-taxa').value = calcularTaxaMaximaCarrinho();
             document.getElementById('ent-rua-bairro').value = '';
             document.getElementById('ent-complemento').value = '';
 
@@ -645,6 +755,14 @@
             setTipoEntrega('retirada');
             alterarFormaPagamento();
             document.getElementById('modal-venda').classList.remove('hidden');
+        }
+
+        function calcularTaxaMaximaCarrinho() {
+            let maiorTaxa = 0;
+            window.carrinho.forEach(item => {
+                if (item.taxa > maiorTaxa) maiorTaxa = item.taxa;
+            });
+            return maiorTaxa;
         }
 
         function carregarSelectClientes(filtro = '') {
@@ -690,20 +808,11 @@
                 btnE.className = "py-2.5 rounded-lg text-sm font-semibold border border-slate-700 bg-slate-900 text-slate-400";
                 campos.classList.add('hidden');
             }
-            calcularTotalVenda();
+            atualizarTotaisModal();
         }
 
-        function alterarQtdVenda(delta) {
-            if (qtdVenda + delta >= 1 && qtdVenda + delta <= produtoSelecionado.estoque) {
-                qtdVenda += delta;
-                document.getElementById('venda-qtd').innerText = qtdVenda;
-                calcularTotalVenda();
-            }
-        }
-
-        function calcularTotalVenda() {
-            if (!produtoSelecionado) return;
-            let subtotal = Number(produtoSelecionado.preco) * qtdVenda;
+        function atualizarTotaisModal() {
+            let subtotal = window.carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
             let taxa = tipoEntrega === 'entrega' ? (parseFloat(document.getElementById('ent-taxa').value) || 0) : 0;
             let total = subtotal + taxa;
             document.getElementById('venda-total').innerText = `R$ ${total.toFixed(2)}`;
@@ -722,8 +831,7 @@
         }
 
         function calcularMisto() {
-            if (!produtoSelecionado) return;
-            let subtotal = Number(produtoSelecionado.preco) * qtdVenda;
+            let subtotal = window.carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
             let taxa = tipoEntrega === 'entrega' ? (parseFloat(document.getElementById('ent-taxa').value) || 0) : 0;
             let total = subtotal + taxa;
 
@@ -737,13 +845,11 @@
         }
 
         async function confirmarVenda() {
-            if (!produtoSelecionado || produtoSelecionado.estoque < qtdVenda) {
-                alert('Estoque insuficiente!');
-                return;
-            }
+            if (window.carrinho.length === 0) return;
 
             let taxa = tipoEntrega === 'entrega' ? (parseFloat(document.getElementById('ent-taxa').value) || 0) : 0;
-            let total = (Number(produtoSelecionado.preco) * qtdVenda) + taxa;
+            let subtotal = window.carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
+            let total = subtotal + taxa;
             let pag = document.getElementById('venda-pagamento').value;
 
             let detalhePag = {};
@@ -770,17 +876,26 @@
                 await window.dbSaveDataInicioCaixa(Date.now());
             }
 
-            produtoSelecionado.estoque = Number(produtoSelecionado.estoque) - Number(qtdVenda);
-            await window.dbSaveProduto(produtoSelecionado);
+            // Atualiza o estoque de cada produto do carrinho na nuvem
+            for (let item of window.carrinho) {
+                const prodReal = (window.produtos || []).find(p => String(p.id) === String(item.id));
+                if (prodReal) {
+                    prodReal.estoque = Number(prodReal.estoque) - Number(item.qtd);
+                    await window.dbSaveProduto(prodReal);
+                }
+            }
 
             const timestampAgora = Date.now();
+            // Monta o nome resumido dos produtos para a tabela (ex: "2x Água, 1x Gás")
+            const resumoProdutos = window.carrinho.map(i => `${i.qtd}x ${i.nome}`).join(', ');
+
             const venda = {
                 id: String(timestampAgora),
                 timestamp: timestampAgora,
                 data: new Date().toLocaleString('pt-BR'),
-                produtoId: String(produtoSelecionado.id),
-                produtoNome: produtoSelecionado.nome,
-                qtd: qtdVenda,
+                itens: [...window.carrinho],
+                produtoNome: resumoProdutos,
+                qtd: window.carrinho.reduce((acc, i) => acc + i.qtd, 0),
                 total: total,
                 taxaEntregador: taxa,
                 tipoEntrega: tipoEntrega,
@@ -793,11 +908,12 @@
             };
 
             await window.dbSaveVenda(venda);
+            window.carrinho = [];
             window.clienteTelSelecionado = '';
+            renderizarCarrinho();
             fecharModalVenda();
 
-            // Mostra o aviso visual de venda realizada na tela
-            mostrarToast(`✅ Venda de ${qtdVenda}x ${produtoSelecionado.nome} realizada com sucesso!`);
+            mostrarToast(`✅ Venda multi-itens realizada com sucesso!`);
         }
 
         // ESTOQUE
@@ -978,7 +1094,7 @@
                         </div>
                         <div>
                             <h4 class="font-bold text-lg text-slate-100">${v.cliente}</h4>
-                            <p class="text-sm text-slate-300"><strong>Pedido:</strong> ${v.qtd}x ${v.produtoNome}</p>
+                            <p class="text-sm text-slate-300"><strong>Pedido:</strong> ${v.produtoNome}</p>
                             <p class="text-xs text-slate-400 mt-1"><strong>Maps:</strong> ${v.ruaBairro}</p>
                             ${v.complemento ? `<p class="text-xs text-amber-300"><strong>Comp/Nº:</strong> ${v.complemento}</p>` : ''}
                         </div>
@@ -1015,7 +1131,7 @@
             const novoPag = selectPag ? selectPag.value : 'dinheiro';
 
             if (novoPag === 'pendente') {
-                alert('Por favor, selecione qual foi a forma de pagamento recebida no local (Dinheiro, PIX ou Cartão) antes de concluir!');
+                alert('Por favor, selecione qual foi a forma de pagamento recebida no local antes de concluir!');
                 return;
             }
 
@@ -1071,7 +1187,7 @@
             tbody.innerHTML = vns.map(v => `
                 <tr class="hover:bg-slate-700/30">
                     <td class="p-3 text-xs text-slate-400">${v.data || ''}</td>
-                    <td class="p-3 font-semibold">${v.qtd}x ${v.produtoNome}</td>
+                    <td class="p-3 font-semibold">${v.produtoNome}</td>
                     <td class="p-3 text-xs">${v.cliente} (${v.tipoEntrega})</td>
                     <td class="p-3 text-xs uppercase font-bold ${v.pagamento && v.pagamento.tipo === 'pendente' ? 'text-amber-400' : 'text-blue-400'}">${v.pagamento ? v.pagamento.tipo : '-'}</td>
                     <td class="p-3 font-bold text-emerald-400">R$ ${Number(v.total || 0).toFixed(2)}</td>
@@ -1103,11 +1219,23 @@
             const v = (window.vendas || []).find(x => String(x.id) === String(id));
             if (!v) return;
 
-            if (confirm(`Cancelar a venda de ${v.qtd}x ${v.produtoNome}? O valor será devolvido ao caixa e os produtos retornarão ao estoque.`)) {
-                const p = (window.produtos || []).find(x => String(x.id) === String(v.produtoId));
-                if (p) {
-                    p.estoque = Number(p.estoque) + Number(v.qtd);
-                    await window.dbSaveProduto(p);
+            if (confirm(`Cancelar esta venda? Os produtos retornarão ao estoque e o valor sairá do caixa.`)) {
+                // Estorna o estoque de todos os itens da venda
+                if (v.itens && Array.isArray(v.itens)) {
+                    for (let item of v.itens) {
+                        const p = (window.produtos || []).find(x => String(x.id) === String(item.id));
+                        if (p) {
+                            p.estoque = Number(p.estoque) + Number(item.qtd);
+                            await window.dbSaveProduto(p);
+                        }
+                    }
+                } else if (v.produtoId) {
+                    // Compatibilidade com vendas antigas de item único
+                    const p = (window.produtos || []).find(x => String(x.id) === String(v.produtoId));
+                    if (p) {
+                        p.estoque = Number(p.estoque) + Number(v.qtd);
+                        await window.dbSaveProduto(p);
+                    }
                 }
                 await window.dbDeleteVenda(String(id));
             }
