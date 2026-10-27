@@ -80,9 +80,7 @@
             </div>
 
             <!-- Filtros por Categoria no PDV -->
-            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="categorias-pdv">
-                <!-- Botões de Categoria inseridos via JS -->
-            </div>
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="categorias-pdv"></div>
 
             <!-- Grid de Produtos no PDV -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="grid-vendas-produtos"></div>
@@ -100,9 +98,7 @@
                 </button>
             </div>
 
-            <!-- Filtro de Categoria no Estoque -->
             <div class="flex gap-2 overflow-x-auto pb-2" id="categorias-estoque"></div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-estoque-produtos"></div>
         </section>
 
@@ -128,7 +124,7 @@
         <section id="aba-entregas" class="aba-conteudo hidden space-y-6">
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <h2 class="text-lg font-bold text-amber-400">Painel do Entregador (Tempo Real)</h2>
-                <p class="text-xs text-slate-400">Toque no botão para abrir a rota direta no Google Maps</p>
+                <p class="text-xs text-slate-400">Ajuste a forma de pagamento recebida no local e toque no botão para concluir</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-entregas"></div>
         </section>
@@ -255,6 +251,7 @@
                     <option value="pix">📱 PIX</option>
                     <option value="cartao">💳 Cartão</option>
                     <option value="misto">🔀 Misto / Mesclado</option>
+                    <option value="pendente">❓ Não sei ainda (A definir no local)</option>
                 </select>
             </div>
 
@@ -867,6 +864,7 @@
 
             grid.innerHTML = pendentes.map(v => {
                 const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.ruaBairro)}`;
+                const pagTipo = v.pagamento ? v.pagamento.tipo : 'pendente';
                 
                 return `
                     <div class="bg-slate-800 p-4 rounded-xl border border-amber-500/30 space-y-3 shadow-md">
@@ -880,12 +878,24 @@
                             <p class="text-xs text-slate-400 mt-1"><strong>Maps:</strong> ${v.ruaBairro}</p>
                             ${v.complemento ? `<p class="text-xs text-amber-300"><strong>Comp/Nº:</strong> ${v.complemento}</p>` : ''}
                         </div>
+                        
+                        <!-- Seletor de Pagamento para o Entregador -->
+                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 space-y-1">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase block">Forma de Pagamento Recebida:</label>
+                            <select id="pag-entregador-${v.id}" class="w-full bg-slate-800 text-slate-200 border border-slate-600 text-xs rounded-md p-2 font-bold focus:outline-none focus:border-amber-400">
+                                <option value="dinheiro" ${pagTipo === 'dinheiro' ? 'selected' : ''}>💵 Dinheiro</option>
+                                <option value="pix" ${pagTipo === 'pix' ? 'selected' : ''}>📱 PIX</option>
+                                <option value="cartao" ${pagTipo === 'cartao' ? 'selected' : ''}>💳 Cartão</option>
+                                <option value="pendente" ${pagTipo === 'pendente' ? 'selected' : ''}>❓ A definir no local</option>
+                            </select>
+                        </div>
+
                         <div class="pt-2 border-t border-slate-700 flex flex-col gap-2">
                             <a href="${urlMaps}" target="_blank" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-center text-sm flex items-center justify-center gap-2 active:scale-95 transition">
                                 <i class="fa-solid fa-map-location-dot"></i> Abrir Rota Google Maps
                             </a>
-                            <button onclick="concluirEntrega('${v.id}')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg active:scale-95 transition">
-                                Concluir Entrega
+                            <button onclick="concluirEntrega('${v.id}')" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg active:scale-95 transition">
+                                ✓ Concluir e Confirmar Entrega
                             </button>
                         </div>
                     </div>
@@ -895,10 +905,19 @@
 
         async function concluirEntrega(id) {
             const v = (window.vendas || []).find(x => String(x.id) === String(id));
-            if (v) {
-                v.statusEntrega = 'concluida';
-                await window.dbSaveVenda(v);
+            if (!v) return;
+
+            const selectPag = document.getElementById(`pag-entregador-${id}`);
+            const novoPag = selectPag ? selectPag.value : 'dinheiro';
+
+            if (novoPag === 'pendente') {
+                alert('Por favor, selecione qual foi a forma de pagamento recebida no local (Dinheiro, PIX ou Cartão) antes de concluir!');
+                return;
             }
+
+            v.pagamento = { tipo: novoPag, valor: v.total };
+            v.statusEntrega = 'concluida';
+            await window.dbSaveVenda(v);
         }
 
         // CAIXA
@@ -944,7 +963,7 @@
                     <td class="p-3 text-xs text-slate-400">${v.data || ''}</td>
                     <td class="p-3 font-semibold">${v.qtd}x ${v.produtoNome}</td>
                     <td class="p-3 text-xs">${v.cliente} (${v.tipoEntrega})</td>
-                    <td class="p-3 text-xs uppercase font-bold text-blue-400">${v.pagamento ? v.pagamento.tipo : '-'}</td>
+                    <td class="p-3 text-xs uppercase font-bold ${v.pagamento && v.pagamento.tipo === 'pendente' ? 'text-amber-400' : 'text-blue-400'}">${v.pagamento ? v.pagamento.tipo : '-'}</td>
                     <td class="p-3 font-bold text-emerald-400">R$ ${Number(v.total || 0).toFixed(2)}</td>
                     <td class="p-3 text-right">
                         <button onclick="cancelarVenda('${v.id}')" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-2.5 py-1 rounded transition active:scale-95">
