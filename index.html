@@ -73,16 +73,11 @@
 
         <!-- ABA VENDER (PDV) -->
         <section id="aba-vender" class="aba-conteudo space-y-4">
-            <!-- Barra de Busca de Produtos -->
             <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
                 <input type="text" id="busca-produto-pdv" oninput="renderizarVendasPDV()" placeholder="🔍 Pesquisar produto por nome..." class="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-blue-500 shadow-md">
             </div>
-
-            <!-- Filtros por Categoria no PDV -->
             <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="categorias-pdv"></div>
-
-            <!-- Grid de Produtos no PDV -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="grid-vendas-produtos"></div>
         </section>
 
@@ -121,10 +116,15 @@
         </section>
 
         <!-- ABA ENTREGAS -->
-        <section id="aba-entregas" class="aba-conteudo hidden space-y-6">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <h2 class="text-lg font-bold text-amber-400">Painel do Entregador (Tempo Real)</h2>
-                <p class="text-xs text-slate-400">Ajuste a forma de pagamento recebida no local e toque no botão para concluir</p>
+        <section id="aba-entregas" class="aba-conteudo hidden space-y-4">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                    <h2 class="text-lg font-bold text-amber-400">Painel do Entregador (Tempo Real)</h2>
+                    <p class="text-xs text-slate-400">Ajuste a forma de pagamento recebida no local e conclua</p>
+                </div>
+                <button id="btn-ativar-notificacao" onclick="solicitarPermissaoNotificacao()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md active:scale-95 transition">
+                    <i class="fa-solid fa-bell"></i> Ativar Sons e Notificações
+                </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-entregas"></div>
         </section>
@@ -373,6 +373,7 @@
         window.clientes = [];
         window.vendas = [];
         window.trocoInicial = 0.00;
+        let qtdEntregasAnterior = -1;
 
         // OUVINTES EM TEMPO REAL
         onValue(ref(db, 'produtos'), (snapshot) => {
@@ -391,7 +392,17 @@
 
         onValue(ref(db, 'vendas'), (snapshot) => {
             const data = snapshot.val();
-            window.vendas = data ? Object.values(data).sort((a,b) => Number(b.id) - Number(a.id)) : [];
+            const listaVendas = data ? Object.values(data).sort((a,b) => Number(b.id) - Number(a.id)) : [];
+            window.vendas = listaVendas;
+
+            // Checa se surgiu uma nova entrega para notificar o motoboy
+            const entregasAtuais = listaVendas.filter(v => v.tipoEntrega === 'entrega' && v.statusEntrega === 'pendente');
+            if (qtdEntregasAnterior !== -1 && entregasAtuais.length > qtdEntregasAnterior) {
+                const ultimaEntrega = entregasAtuais[0];
+                dispararAlertaSonoroENotificacao(ultimaEntrega);
+            }
+            qtdEntregasAnterior = entregasAtuais.length;
+
             renderizarTudo();
         });
 
@@ -442,6 +453,51 @@
         let categoriaAtivaPDV = 'Todos';
         let categoriaAtivaEstoque = 'Todos';
 
+        // NOTIFICAÇÃO E SOM PARA O ENTREGADOR
+        function solicitarPermissaoNotificacao() {
+            tocarSomNotificacao();
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permissao => {
+                    if (permissao === "granted") {
+                        alert("🟢 Sons e Notificações ativados com sucesso!");
+                        const btn = document.getElementById('btn-ativar-notificacao');
+                        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Notificações Ativas';
+                    } else {
+                        alert("Permissão de notificação negada. O som ainda funcionará ao receber entregas.");
+                    }
+                });
+            } else {
+                alert("Sons de notificação habilitados!");
+            }
+        }
+
+        function tocarSomNotificacao() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Tom A5
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch (e) {
+                console.log("Áudio aguardando interação do usuário.");
+            }
+        }
+
+        function dispararAlertaSonoroENotificacao(entrega) {
+            tocarSomNotificacao();
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("🛵 Nova Entrega Chegou!", {
+                    body: `Cliente: ${entrega.cliente || 'Sem Nome'}\nEndereço: ${entrega.ruaBairro || ''}`,
+                    icon: "https://cdn-icons-png.flaticon.com/512/2972/2972185.png"
+                });
+            }
+        }
+
         function mudarAba(aba) {
             document.querySelectorAll('.aba-conteudo').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.aba-btn').forEach(el => {
@@ -468,7 +524,6 @@
                 if (!cats.includes(cat)) cats.push(cat);
             });
 
-            // Categorias PDV
             const divPdv = document.getElementById('categorias-pdv');
             if (divPdv) {
                 divPdv.innerHTML = cats.map(c => `
@@ -478,7 +533,6 @@
                 `).join('');
             }
 
-            // Categorias Estoque
             const divEst = document.getElementById('categorias-estoque');
             if (divEst) {
                 divEst.innerHTML = cats.map(c => `
@@ -516,12 +570,10 @@
             let prods = window.produtos || [];
             const txtBusca = document.getElementById('busca-produto-pdv') ? document.getElementById('busca-produto-pdv').value.toLowerCase() : '';
 
-            // Filtro de Categoria
             if (categoriaAtivaPDV !== 'Todos') {
                 prods = prods.filter(p => (p.categoria || 'Outros') === categoriaAtivaPDV);
             }
 
-            // Filtro de Busca de Texto
             if (txtBusca) {
                 prods = prods.filter(p => p.nome.toLowerCase().includes(txtBusca));
             }
@@ -879,7 +931,6 @@
                             ${v.complemento ? `<p class="text-xs text-amber-300"><strong>Comp/Nº:</strong> ${v.complemento}</p>` : ''}
                         </div>
                         
-                        <!-- Seletor de Pagamento para o Entregador -->
                         <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 space-y-1">
                             <label class="text-[11px] font-bold text-slate-400 uppercase block">Forma de Pagamento Recebida:</label>
                             <select id="pag-entregador-${v.id}" class="w-full bg-slate-800 text-slate-200 border border-slate-600 text-xs rounded-md p-2 font-bold focus:outline-none focus:border-amber-400">
