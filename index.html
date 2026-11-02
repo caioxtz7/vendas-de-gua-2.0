@@ -181,7 +181,7 @@
                     <span id="c-pix" class="text-lg font-bold text-purple-400">R$ 0,00</span>
                 </div>
                 <div class="bg-slate-800 p-3.5 rounded-xl border border-slate-700">
-                    <span class="text-xs text-slate-400 block">Taxas Entregador</span>
+                    <span class="text-xs text-slate-400 block">Comissão Entregador</span>
                     <span id="c-taxas" class="text-lg font-bold text-amber-400">R$ 0,00</span>
                 </div>
                 <div class="bg-slate-800 p-3.5 rounded-xl border border-slate-700">
@@ -245,7 +245,7 @@
                     <i class="fa-solid fa-store"></i> Retirada Balcão
                 </button>
                 <button type="button" onclick="setTipoEntrega('entrega')" id="btn-entrega" class="py-2.5 rounded-lg text-sm font-semibold border border-slate-700 bg-slate-900 text-slate-400">
-                    <i class="fa-solid fa-motorcycle"></i> Entrega
+                    <i class="fa-solid fa-motorcycle"></i> Entrega (+ R$ 2,00)
                 </button>
             </div>
 
@@ -256,8 +256,8 @@
                         <input type="text" id="ent-nome" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-400">Taxa do Entregador (R$)</label>
-                        <input type="number" step="0.50" id="ent-taxa" oninput="atualizarTotaisModal()" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm" value="0">
+                        <label class="text-xs text-slate-400">Taxa Frete Cliente (R$)</label>
+                        <input type="number" step="0.50" id="ent-taxa" oninput="atualizarTotaisModal()" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm" value="2.00">
                     </div>
                 </div>
                 <div>
@@ -267,6 +267,10 @@
                 <div>
                     <label class="text-xs text-slate-400">Nº / Apto / Complemento (Para o entregador)</label>
                     <input type="text" id="ent-complemento" placeholder="Ex: Nº 123, Apto 201" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm">
+                </div>
+                <div class="text-xs text-amber-400 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Comissão do Entregador: R$ <span id="comissao-entregador-modal">0.00</span> (R$ 0,50 / água)</span>
                 </div>
             </div>
 
@@ -344,10 +348,6 @@
                         <label class="text-xs text-slate-400">Estoque Inicial</label>
                         <input type="number" id="prod-estoque" placeholder="50" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                     </div>
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400">Taxa de Entrega Padrão (R$)</label>
-                    <input type="number" step="0.50" id="prod-taxa" placeholder="3.00" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
             </div>
             <button onclick="salvarProduto()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition">Salvar Produto</button>
@@ -663,10 +663,10 @@
                 window.carrinho.push({
                     id: p.id,
                     nome: p.nome,
+                    categoria: p.categoria || 'Outros',
                     preco: Number(p.preco),
                     qtd: 1,
-                    estoqueMax: p.estoque,
-                    taxa: Number(p.taxa || 0)
+                    estoqueMax: p.estoque
                 });
             }
             renderizarCarrinho();
@@ -742,7 +742,7 @@
 
             document.getElementById('venda-busca-cliente').value = '';
             document.getElementById('ent-nome').value = '';
-            document.getElementById('ent-taxa').value = calcularTaxaMaximaCarrinho();
+            document.getElementById('ent-taxa').value = '2.00'; // Frete fixo de R$ 2,00 para entrega
             document.getElementById('ent-rua-bairro').value = '';
             document.getElementById('ent-complemento').value = '';
 
@@ -752,12 +752,17 @@
             document.getElementById('modal-venda').classList.remove('hidden');
         }
 
-        function calcularTaxaMaximaCarrinho() {
-            let maiorTaxa = 0;
+        // CALCULA COMISSÃO DO ENTREGADOR (R$ 0,50 POR ÁGUA NO CARRINHO)
+        function calcularComissaoEntregadorCarrinho() {
+            let totalComissao = 0;
             window.carrinho.forEach(item => {
-                if (item.taxa > maiorTaxa) maiorTaxa = item.taxa;
+                const cat = (item.categoria || '').toLowerCase();
+                const nome = (item.nome || '').toLowerCase();
+                if (cat.includes('água') || cat.includes('agua') || nome.includes('água') || nome.includes('agua')) {
+                    totalComissao += (item.qtd * 0.50);
+                }
             });
-            return maiorTaxa;
+            return totalComissao;
         }
 
         function carregarSelectClientes(filtro = '') {
@@ -808,9 +813,14 @@
 
         function atualizarTotaisModal() {
             let subtotal = window.carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
-            let taxa = tipoEntrega === 'entrega' ? (parseFloat(document.getElementById('ent-taxa').value) || 0) : 0;
-            let total = subtotal + taxa;
+            let taxaFrete = tipoEntrega === 'entrega' ? (parseFloat(document.getElementById('ent-taxa').value) || 0) : 0;
+            let total = subtotal + taxaFrete;
             document.getElementById('venda-total').innerText = `R$ ${total.toFixed(2)}`;
+
+            let comissaoEntregador = tipoEntrega === 'entrega' ? calcularComissaoEntregadorCarrinho() : 0;
+            const comEl = document.getElementById('comissao-entregador-modal');
+            if (comEl) comEl.innerText = comissaoEntregador.toFixed(2);
+
             calcularMisto();
         }
 
@@ -827,8 +837,8 @@
 
         function calcularMisto() {
             let subtotal = window.carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
-            let taxa = tipoEntrega === 'entrega' ? (parseFloat(document.getElementById('ent-taxa').value) || 0) : 0;
-            let total = subtotal + taxa;
+            let taxaFrete = tipoEntrega === 'entrega' ? (parseFloat(document.getElementById('ent-taxa').value) || 0) : 0;
+            let total = subtotal + taxaFrete;
 
             let din = parseFloat(document.getElementById('misto-dinheiro').value) || 0;
             let restante = Math.max(0, total - din);
@@ -842,9 +852,11 @@
         async function confirmarVenda() {
             if (window.carrinho.length === 0) return;
 
-            let taxa = tipoEntrega === 'entrega' ? (parseFloat(document.getElementById('ent-taxa').value) || 0) : 0;
+            let taxaFrete = tipoEntrega === 'entrega' ? (parseFloat(document.getElementById('ent-taxa').value) || 0) : 0;
+            let comissaoEntregador = tipoEntrega === 'entrega' ? calcularComissaoEntregadorCarrinho() : 0;
+            
             let subtotal = window.carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
-            let total = subtotal + taxa;
+            let total = subtotal + taxaFrete;
             let pag = document.getElementById('venda-pagamento').value;
 
             let detalhePag = {};
@@ -890,7 +902,8 @@
                 produtoNome: resumoProdutos,
                 qtd: window.carrinho.reduce((acc, i) => acc + i.qtd, 0),
                 total: total,
-                taxaEntregador: taxa,
+                taxaEntregador: comissaoEntregador, // Salva os R$ 0,50 por água como valor do entregador
+                taxaFrete: taxaFrete,
                 tipoEntrega: tipoEntrega,
                 cliente: clienteNome,
                 clienteTel: clienteTel,
@@ -906,7 +919,7 @@
             renderizarCarrinho();
             fecharModalVenda();
 
-            mostrarToast(`✅ Venda multi-itens realizada com sucesso!`);
+            mostrarToast(`✅ Venda realizada com sucesso!`);
         }
 
         // ESTOQUE
@@ -929,7 +942,7 @@
                     <div>
                         <span class="text-[10px] uppercase font-extrabold px-2 py-0.5 bg-slate-700 text-blue-400 rounded-md">${p.categoria || 'Outros'}</span>
                         <h4 class="font-bold text-slate-100 mt-1">${p.nome}</h4>
-                        <p class="text-xs text-slate-400">Preço: R$ ${Number(p.preco).toFixed(2)} | Taxa: R$ ${Number(p.taxa||0).toFixed(2)}</p>
+                        <p class="text-xs text-slate-400">Preço: R$ ${Number(p.preco).toFixed(2)}</p>
                         <p class="text-sm font-bold text-emerald-400 mt-1">Estoque: ${p.estoque} un</p>
                     </div>
                     <div class="flex gap-2">
@@ -946,7 +959,6 @@
             document.getElementById('prod-categoria').value = 'Águas';
             document.getElementById('prod-preco').value = '';
             document.getElementById('prod-estoque').value = '';
-            document.getElementById('prod-taxa').value = '';
             document.getElementById('modal-prod-titulo').innerText = 'Adicionar Produto';
             document.getElementById('modal-produto').classList.remove('hidden');
         }
@@ -959,7 +971,6 @@
             document.getElementById('prod-categoria').value = p.categoria || 'Outros';
             document.getElementById('prod-preco').value = p.preco;
             document.getElementById('prod-estoque').value = p.estoque;
-            document.getElementById('prod-taxa').value = p.taxa || 0;
             document.getElementById('modal-prod-titulo').innerText = 'Editar Produto';
             document.getElementById('modal-produto').classList.remove('hidden');
         }
@@ -974,11 +985,10 @@
             const categoria = document.getElementById('prod-categoria').value || 'Outros';
             const preco = parseFloat(document.getElementById('prod-preco').value) || 0;
             const estoque = parseInt(document.getElementById('prod-estoque').value) || 0;
-            const taxa = parseFloat(document.getElementById('prod-taxa').value) || 0;
 
             if (!nome) return alert('Informe o nome do produto');
 
-            await window.dbSaveProduto({ id: String(id), nome, categoria, preco, estoque, taxa });
+            await window.dbSaveProduto({ id: String(id), nome, categoria, preco, estoque });
             fecharModalProduto();
         }
 
@@ -1088,7 +1098,8 @@
                         <div>
                             <h4 class="font-bold text-lg text-slate-100">${v.cliente}</h4>
                             <p class="text-sm text-slate-300"><strong>Pedido:</strong> ${v.produtoNome}</p>
-                            <p class="text-xs text-slate-400 mt-1"><strong>Maps:</strong> ${v.ruaBairro}</p>
+                            <p class="text-xs text-amber-400 font-bold mt-1">Comissão Motoboy: R$ ${Number(v.taxaEntregador || 0).toFixed(2)}</p>
+                            <p class="text-xs text-slate-400 mt-0.5"><strong>Maps:</strong> ${v.ruaBairro}</p>
                             ${v.complemento ? `<p class="text-xs text-amber-300"><strong>Comp/Nº:</strong> ${v.complemento}</p>` : ''}
                         </div>
                         
@@ -1218,7 +1229,7 @@
                           `💵 Dinheiro (em gaveta c/ troco): *R$ ${t.dinheiroGaveta.toFixed(2)}*\n` +
                           `📱 PIX: *R$ ${t.pix.toFixed(2)}*\n` +
                           `💳 Cartão: *R$ ${t.cartao.toFixed(2)}*\n` +
-                          `🛵 Taxas Entregador: *R$ ${t.taxas.toFixed(2)}*\n` +
+                          `🛵 Comissão Motoboy Total: *R$ ${t.taxas.toFixed(2)}*\n` +
                           `💰 *FATURAMENTO TOTAL: R$ ${t.total.toFixed(2)}*\n\n` +
                           `_Enviado pelo PDV & Estoque Online_`;
 
@@ -1235,9 +1246,7 @@
 
         async function fecharCaixa() {
             if (confirm('Deseja fechar o caixa do dia? Isso enviará o relatório no WhatsApp, zerará os totais acumulados para o próximo turno e manterá o histórico salvo.')) {
-                // Envia o relatório antes de resetar
                 enviarRelatorioWhatsApp();
-
                 await window.dbSaveDataInicioCaixa(Date.now());
                 await window.dbSaveTroco(0);
                 alert('Caixa fechado com sucesso! Relatório gerado para envio no WhatsApp e totais zerados para o novo turno.');
