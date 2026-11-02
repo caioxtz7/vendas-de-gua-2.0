@@ -80,7 +80,6 @@
         <!-- ABA VENDER (PDV) -->
         <section id="aba-vender" class="aba-conteudo space-y-4">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Coluna de Produtos (Esquerda / 2 colunas no desktop) -->
                 <div class="lg:col-span-2 space-y-4">
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
@@ -90,7 +89,6 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" id="grid-vendas-produtos"></div>
                 </div>
 
-                <!-- Coluna do Carrinho Atual (Direita / 1 coluna no desktop) -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between shadow-xl h-fit sticky top-20">
                     <div class="space-y-3">
                         <div class="flex justify-between items-center border-b border-slate-700 pb-3">
@@ -99,14 +97,10 @@
                             </h2>
                             <button onclick="limparCarrinho()" class="text-xs text-red-400 hover:text-red-300">Limpar</button>
                         </div>
-
-                        <!-- Lista de itens no carrinho -->
                         <div id="lista-carrinho" class="space-y-2 max-h-[35vh] overflow-y-auto pr-1">
                             <div class="text-center py-6 text-slate-500 text-sm">Seu carrinho está vazio. Clique em um produto para adicionar.</div>
                         </div>
                     </div>
-
-                    <!-- Totais e Botão Avançar -->
                     <div class="border-t border-slate-700 pt-3 mt-4 space-y-3">
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-slate-400">Subtotal:</span>
@@ -131,7 +125,6 @@
                     <i class="fa-solid fa-plus"></i> Novo Produto
                 </button>
             </div>
-
             <div class="flex gap-2 overflow-x-auto pb-2" id="categorias-estoque"></div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-estoque-produtos"></div>
         </section>
@@ -197,9 +190,12 @@
                 </div>
             </div>
 
-            <div class="flex justify-end">
-                <button onclick="fecharCaixa()" class="bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 px-4 py-2 rounded-lg text-sm font-semibold transition active:scale-95">
-                    <i class="fa-solid fa-lock"></i> Fechar Caixa do Dia (Zerar Totais do Dia)
+            <div class="flex justify-end gap-3 flex-wrap">
+                <button onclick="enviarRelatorioWhatsApp()" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 px-4 py-2 rounded-lg text-sm font-semibold transition active:scale-95 flex items-center gap-2">
+                    <i class="fa-brands fa-whatsapp"></i> Enviar Relatório Atual no WhatsApp
+                </button>
+                <button onclick="fecharCaixa()" class="bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 px-4 py-2 rounded-lg text-sm font-semibold transition active:scale-95 flex items-center gap-2">
+                    <i class="fa-solid fa-lock"></i> Fechar Caixa do Dia (Zerar e Enviar)
                 </button>
             </div>
 
@@ -651,7 +647,6 @@
             `).join('');
         }
 
-        // LÓGICA DO CARRINHO MULTI-ITENS
         function adicionarAoCarrinho(id) {
             const p = (window.produtos || []).find(x => String(x.id) === String(id));
             if (!p || p.estoque <= 0) return;
@@ -876,7 +871,6 @@
                 await window.dbSaveDataInicioCaixa(Date.now());
             }
 
-            // Atualiza o estoque de cada produto do carrinho na nuvem
             for (let item of window.carrinho) {
                 const prodReal = (window.produtos || []).find(p => String(p.id) === String(item.id));
                 if (prodReal) {
@@ -886,7 +880,6 @@
             }
 
             const timestampAgora = Date.now();
-            // Monta o nome resumido dos produtos para a tabela (ex: "2x Água, 1x Gás")
             const resumoProdutos = window.carrinho.map(i => `${i.qtd}x ${i.nome}`).join(', ');
 
             const venda = {
@@ -1140,15 +1133,17 @@
             await window.dbSaveVenda(v);
         }
 
-        // CAIXA
-        function renderizarCaixa() {
-            let din = 0, cartao = 0, pix = 0, taxas = 0, total = 0;
+        // CAIXA E RELATÓRIO WHATSAPP
+        function calcularTotaisCaixaAtual() {
+            let din = 0, cartao = 0, pix = 0, taxas = 0, total = 0, qtdVendas = 0;
             const dataInicio = window.dataInicioCaixa ? Number(window.dataInicioCaixa) : 0;
 
             const vendasCaixaAtual = (window.vendas || []).filter(v => {
                 const tsVenda = v.timestamp || Number(v.id);
                 return tsVenda >= dataInicio;
             });
+
+            qtdVendas = vendasCaixaAtual.length;
 
             vendasCaixaAtual.forEach(v => {
                 total += Number(v.total || 0);
@@ -1166,13 +1161,27 @@
                 }
             });
 
+            return {
+                troco: window.trocoInicial || 0,
+                dinheiroGaveta: din + (window.trocoInicial || 0),
+                cartao,
+                pix,
+                taxas,
+                total,
+                qtdVendas
+            };
+        }
+
+        function renderizarCaixa() {
+            const t = calcularTotaisCaixaAtual();
+
             if(document.getElementById('c-troco')) {
-                document.getElementById('c-troco').innerText = `R$ ${(window.trocoInicial || 0).toFixed(2)}`;
-                document.getElementById('c-dinheiro').innerText = `R$ ${(din + (window.trocoInicial || 0)).toFixed(2)}`;
-                document.getElementById('c-cartao').innerText = `R$ ${cartao.toFixed(2)}`;
-                document.getElementById('c-pix').innerText = `R$ ${pix.toFixed(2)}`;
-                document.getElementById('c-taxas').innerText = `R$ ${taxas.toFixed(2)}`;
-                document.getElementById('c-total').innerText = `R$ ${total.toFixed(2)}`;
+                document.getElementById('c-troco').innerText = `R$ ${t.troco.toFixed(2)}`;
+                document.getElementById('c-dinheiro').innerText = `R$ ${t.dinheiroGaveta.toFixed(2)}`;
+                document.getElementById('c-cartao').innerText = `R$ ${t.cartao.toFixed(2)}`;
+                document.getElementById('c-pix').innerText = `R$ ${t.pix.toFixed(2)}`;
+                document.getElementById('c-taxas').innerText = `R$ ${t.taxas.toFixed(2)}`;
+                document.getElementById('c-total').innerText = `R$ ${t.total.toFixed(2)}`;
             }
 
             const tbody = document.getElementById('lista-vendas');
@@ -1200,6 +1209,23 @@
             `).join('');
         }
 
+        function enviarRelatorioWhatsApp() {
+            const t = calcularTotaisCaixaAtual();
+            const dataHoje = new Date().toLocaleDateString('pt-BR');
+
+            const texto = `📊 *RELATÓRIO DE CAIXA - ${dataHoje}* 📊\n\n` +
+                          `🛒 Total de Vendas: *${t.qtdVendas}*\n` +
+                          `💵 Dinheiro (em gaveta c/ troco): *R$ ${t.dinheiroGaveta.toFixed(2)}*\n` +
+                          `📱 PIX: *R$ ${t.pix.toFixed(2)}*\n` +
+                          `💳 Cartão: *R$ ${t.cartao.toFixed(2)}*\n` +
+                          `🛵 Taxas Entregador: *R$ ${t.taxas.toFixed(2)}*\n` +
+                          `💰 *FATURAMENTO TOTAL: R$ ${t.total.toFixed(2)}*\n\n` +
+                          `_Enviado pelo PDV & Estoque Online_`;
+
+            const urlWpp = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+            window.open(urlWpp, '_blank');
+        }
+
         async function abrirModalTroco() {
             let val = prompt('Informe o Saldo Inicial / Troco do Caixa (R$):', window.trocoInicial || 0);
             if (val !== null) {
@@ -1208,10 +1234,13 @@
         }
 
         async function fecharCaixa() {
-            if (confirm('Deseja fechar o caixa do dia? Isso zerará os totais acumulados do dia para abrir o próximo, mantendo todo o histórico de vendas guardado.')) {
+            if (confirm('Deseja fechar o caixa do dia? Isso enviará o relatório no WhatsApp, zerará os totais acumulados para o próximo turno e manterá o histórico salvo.')) {
+                // Envia o relatório antes de resetar
+                enviarRelatorioWhatsApp();
+
                 await window.dbSaveDataInicioCaixa(Date.now());
                 await window.dbSaveTroco(0);
-                alert('Caixa fechado com sucesso! Os totais foram zerados para o novo turno, e o histórico de vendas foi preservado.');
+                alert('Caixa fechado com sucesso! Relatório gerado para envio no WhatsApp e totais zerados para o novo turno.');
             }
         }
 
@@ -1220,7 +1249,6 @@
             if (!v) return;
 
             if (confirm(`Cancelar esta venda? Os produtos retornarão ao estoque e o valor sairá do caixa.`)) {
-                // Estorna o estoque de todos os itens da venda
                 if (v.itens && Array.isArray(v.itens)) {
                     for (let item of v.itens) {
                         const p = (window.produtos || []).find(x => String(x.id) === String(item.id));
@@ -1230,7 +1258,6 @@
                         }
                     }
                 } else if (v.produtoId) {
-                    // Compatibilidade com vendas antigas de item único
                     const p = (window.produtos || []).find(x => String(x.id) === String(v.produtoId));
                     if (p) {
                         p.estoque = Number(p.estoque) + Number(v.qtd);
