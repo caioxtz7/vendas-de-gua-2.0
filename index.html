@@ -1013,7 +1013,6 @@
 
             if (!nome) return alert('Informe o nome do produto');
 
-            // Se for novo produto, define o estoque inicial base
             await window.dbSaveProduto({ id: String(id), nome, categoria, preco, estoque });
             fecharModalProduto();
         }
@@ -1182,7 +1181,6 @@
 
             qtdVendas = vendasCaixaAtual.length;
 
-            // Mapeia quanto vendeu de cada produto no turno atual
             let vendidosPorProduto = {};
 
             vendasCaixaAtual.forEach(v => {
@@ -1232,7 +1230,6 @@
                 document.getElementById('c-total').innerText = `R$ ${t.total.toFixed(2)}`;
             }
 
-            // Renderiza tabela de resumo de estoque do dia na aba Caixa
             const tabelaEstoque = document.getElementById('tabela-resumo-estoque');
             if (tabelaEstoque) {
                 const prods = window.produtos || [];
@@ -1291,7 +1288,7 @@
                 let qtdVendida = t.vendidosPorProduto[p.nome] || 0;
                 let estoqueAtual = Number(p.estoque);
                 let estoqueInicial = estoqueAtual + qtdVendida;
-                detalheEstoqueTexto += `• ${p.nome}: Inicial *${estoqueInicial}* | Vendeu *-{qtdVendida}* | Atual *${estoqueAtual}*\n`;
+                detalheEstoqueTexto += `• ${p.nome}: Inicial *${estoqueInicial}* | Vendeu *-${qtdVendida}* | Atual *${estoqueAtual}*\n`;
             });
 
             const texto = `📊 *RELATÓRIO DE CAIXA E ESTOQUE - ${dataHoje}* 📊\n\n` +
