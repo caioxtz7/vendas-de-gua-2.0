@@ -199,6 +199,27 @@
                 </button>
             </div>
 
+            <!-- RESUMO DETALHADO DE ESTOQUE DO DIA -->
+            <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                <div class="p-4 border-b border-slate-700 font-bold flex justify-between items-center">
+                    <span>📦 Resumo de Estoque (Turno/Dia Atual)</span>
+                    <span class="text-xs text-slate-400 font-normal">Estoque inicial vs. quantidade vendida</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-900/50 text-slate-400 text-xs uppercase">
+                            <tr>
+                                <th class="p-3">Produto</th>
+                                <th class="p-3">Estoque Inicial</th>
+                                <th class="p-3">Qtd Vendida</th>
+                                <th class="p-3">Estoque Atual</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-resumo-estoque" class="divide-y divide-slate-700/50"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                 <div class="p-4 border-b border-slate-700 font-bold flex justify-between items-center">
                     <span>Histórico Permanente de Vendas</span>
@@ -737,7 +758,6 @@
             btnAvancar.disabled = false;
         }
 
-        // CONTA QUANTIDADE TOTAL DE ÁGUAS NO CARRINHO
         function calcularQtdTotalAguas() {
             let qtdAguas = 0;
             window.carrinho.forEach(item => {
@@ -812,12 +832,8 @@
 
         function atualizarTotaisModal() {
             let subtotal = window.carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
-            
             let qtdAguas = calcularQtdTotalAguas();
-            // Frete do cliente: R$ 2,00 por cada água
             let taxaFreteCliente = tipoEntrega === 'entrega' ? (qtdAguas * 2.00) : 0;
-            
-            // Comissão entregador: R$ 0,50 por cada água
             let comissaoEntregador = tipoEntrega === 'entrega' ? (qtdAguas * 0.50) : 0;
 
             document.getElementById('ent-taxa').value = taxaFreteCliente.toFixed(2);
@@ -911,8 +927,8 @@
                 produtoNome: resumoProdutos,
                 qtd: window.carrinho.reduce((acc, i) => acc + i.qtd, 0),
                 total: total,
-                taxaEntregador: comissaoEntregador, // R$ 0,50 por água para o entregador
-                taxaFrete: taxaFreteCliente,        // R$ 2,00 por água cobrado do cliente
+                taxaEntregador: comissaoEntregador,
+                taxaFrete: taxaFreteCliente,
                 tipoEntrega: tipoEntrega,
                 cliente: clienteNome,
                 clienteTel: clienteTel,
@@ -997,6 +1013,7 @@
 
             if (!nome) return alert('Informe o nome do produto');
 
+            // Se for novo produto, define o estoque inicial base
             await window.dbSaveProduto({ id: String(id), nome, categoria, preco, estoque });
             fecharModalProduto();
         }
@@ -1153,8 +1170,8 @@
             await window.dbSaveVenda(v);
         }
 
-        // CAIXA E RELATÓRIO WHATSAPP
-        function calcularTotaisCaixaAtual() {
+        // CALCULO DE VENDAS E ESTOQUE DO TURNO/CAIXA
+        function calcularResumoEstoqueECaixa() {
             let din = 0, cartao = 0, pix = 0, taxas = 0, total = 0, qtdVendas = 0;
             const dataInicio = window.dataInicioCaixa ? Number(window.dataInicioCaixa) : 0;
 
@@ -1165,9 +1182,19 @@
 
             qtdVendas = vendasCaixaAtual.length;
 
+            // Mapeia quanto vendeu de cada produto no turno atual
+            let vendidosPorProduto = {};
+
             vendasCaixaAtual.forEach(v => {
                 total += Number(v.total || 0);
                 taxas += Number(v.taxaEntregador || 0);
+
+                if (v.itens && Array.isArray(v.itens)) {
+                    v.itens.forEach(item => {
+                        let nomeId = item.nome;
+                        vendidosPorProduto[nomeId] = (vendidosPorProduto[nomeId] || 0) + Number(item.qtd);
+                    });
+                }
 
                 if (v.pagamento) {
                     if (v.pagamento.tipo === 'dinheiro') din += Number(v.total || 0);
@@ -1188,12 +1215,13 @@
                 pix,
                 taxas,
                 total,
-                qtdVendas
+                qtdVendas,
+                vendidosPorProduto
             };
         }
 
         function renderizarCaixa() {
-            const t = calcularTotaisCaixaAtual();
+            const t = calcularResumoEstoqueECaixa();
 
             if(document.getElementById('c-troco')) {
                 document.getElementById('c-troco').innerText = `R$ ${t.troco.toFixed(2)}`;
@@ -1202,6 +1230,30 @@
                 document.getElementById('c-pix').innerText = `R$ ${t.pix.toFixed(2)}`;
                 document.getElementById('c-taxas').innerText = `R$ ${t.taxas.toFixed(2)}`;
                 document.getElementById('c-total').innerText = `R$ ${t.total.toFixed(2)}`;
+            }
+
+            // Renderiza tabela de resumo de estoque do dia na aba Caixa
+            const tabelaEstoque = document.getElementById('tabela-resumo-estoque');
+            if (tabelaEstoque) {
+                const prods = window.produtos || [];
+                if (prods.length === 0) {
+                    tabelaEstoque.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhum produto cadastrado.</td></tr>`;
+                } else {
+                    tabelaEstoque.innerHTML = prods.map(p => {
+                        let qtdVendida = t.vendidosPorProduto[p.nome] || 0;
+                        let estoqueAtual = Number(p.estoque);
+                        let estoqueInicial = estoqueAtual + qtdVendida;
+
+                        return `
+                            <tr class="hover:bg-slate-700/30">
+                                <td class="p-3 font-semibold text-slate-100">${p.nome}</td>
+                                <td class="p-3 text-slate-300 font-bold">${estoqueInicial} un</td>
+                                <td class="p-3 text-emerald-400 font-bold">-${qtdVendida} un</td>
+                                <td class="p-3 text-cyan-400 font-bold">${estoqueAtual} un</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
             }
 
             const tbody = document.getElementById('lista-vendas');
@@ -1230,16 +1282,27 @@
         }
 
         function enviarRelatorioWhatsApp() {
-            const t = calcularTotaisCaixaAtual();
+            const t = calcularResumoEstoqueECaixa();
             const dataHoje = new Date().toLocaleDateString('pt-BR');
 
-            const texto = `📊 *RELATÓRIO DE CAIXA - ${dataHoje}* 📊\n\n` +
+            let detalheEstoqueTexto = "";
+            const prods = window.produtos || [];
+            prods.forEach(p => {
+                let qtdVendida = t.vendidosPorProduto[p.nome] || 0;
+                let estoqueAtual = Number(p.estoque);
+                let estoqueInicial = estoqueAtual + qtdVendida;
+                detalheEstoqueTexto += `• ${p.nome}: Inicial *${estoqueInicial}* | Vendeu *-{qtdVendida}* | Atual *${estoqueAtual}*\n`;
+            });
+
+            const texto = `📊 *RELATÓRIO DE CAIXA E ESTOQUE - ${dataHoje}* 📊\n\n` +
                           `🛒 Total de Vendas: *${t.qtdVendas}*\n` +
                           `💵 Dinheiro (em gaveta c/ troco): *R$ ${t.dinheiroGaveta.toFixed(2)}*\n` +
                           `📱 PIX: *R$ ${t.pix.toFixed(2)}*\n` +
                           `💳 Cartão: *R$ ${t.cartao.toFixed(2)}*\n` +
                           `🛵 Comissão Motoboy Total: *R$ ${t.taxas.toFixed(2)}*\n` +
                           `💰 *FATURAMENTO TOTAL: R$ ${t.total.toFixed(2)}*\n\n` +
+                          `📦 *MOVIMENTAÇÃO DE ESTOQUE:*\n` +
+                          (detalheEstoqueTexto || `Nenhuma movimentação`) + `\n` +
                           `_Enviado pelo PDV & Estoque Online_`;
 
             const urlWpp = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
@@ -1254,7 +1317,7 @@
         }
 
         async function fecharCaixa() {
-            if (confirm('Deseja fechar o caixa do dia? Isso enviará o relatório no WhatsApp, zerará os totais acumulados para o próximo turno e manterá o histórico salvo.')) {
+            if (confirm('Deseja fechar o caixa do dia? Isso enviará o relatório detalhado no WhatsApp, zerará os totais acumulados para o próximo turno e manterá o histórico salvo.')) {
                 enviarRelatorioWhatsApp();
                 await window.dbSaveDataInicioCaixa(Date.now());
                 await window.dbSaveTroco(0);
@@ -1274,12 +1337,6 @@
                             p.estoque = Number(p.estoque) + Number(item.qtd);
                             await window.dbSaveProduto(p);
                         }
-                    }
-                } else if (v.produtoId) {
-                    const p = (window.produtos || []).find(x => String(x.id) === String(v.produtoId));
-                    if (p) {
-                        p.estoque = Number(p.estoque) + Number(v.qtd);
-                        await window.dbSaveProduto(p);
                     }
                 }
                 await window.dbDeleteVenda(String(id));
