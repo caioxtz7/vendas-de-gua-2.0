@@ -160,7 +160,7 @@
                     <p class="text-xs text-slate-400">Selecione as entregas desejadas e monte a rota de paradas</p>
                 </div>
                 <button id="btn-ativar-notificacao" onclick="solicitarPermissaoNotificacao()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md active:scale-95 transition">
-                    <i class="fa-solid fa-bell"></i> Ativar Som Personalizado e Notificações
+                    <i class="fa-solid fa-bell"></i> Ativar Alerta Sonoro Alto e Notificações
                 </button>
             </div>
 
@@ -559,45 +559,63 @@
             if ("Notification" in window) {
                 Notification.requestPermission().then(permissao => {
                     if (permissao === "granted") {
-                        alert("🟢 Som personalizado e Notificações ativados com sucesso!");
+                        alert("🟢 Alerta sonoro alto e Notificações ativados com sucesso!");
                         const btn = document.getElementById('btn-ativar-notificacao');
-                        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Notificações Ativas';
+                        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Alerta Alto Ativo';
                     } else {
-                        alert("Permissão de notificação negada. O áudio personalizado ainda funcionará ao receber entregas.");
+                        alert("Permissão de notificação negada. O alarme sonoro alto ainda funcionará ao receber entregas.");
                     }
                 });
             } else {
-                alert("Áudio personalizado habilitado!");
+                alert("Alarme sonoro alto habilitado!");
             }
         }
 
         function tocarSomNotificacao() {
+            // Toca o áudio MP3 no volume máximo (1.0)
             const audio = document.getElementById('audio-notificacao');
             if (audio) {
                 audio.currentTime = 0;
+                audio.volume = 1.0; 
                 audio.play().catch(e => {
-                    console.log("Áudio bloqueado pelo navegador, usando bipe alternativo.");
-                    tocarBiAlternativo();
+                    console.log("Áudio bloqueado pelo navegador.");
                 });
-            } else {
-                tocarBiAlternativo();
             }
+
+            // Toca um bipe duplo bem alto de reforço de áudio
+            tocarAlarmeAltoReforco();
         }
 
-        function tocarBiAlternativo() {
+        function tocarAlarmeAltoReforco() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.4);
+                
+                // Primeiro Bipe Agudo
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'triangle';
+                osc1.frequency.setValueAtTime(1046.50, audioCtx.currentTime); // Nota Dó agudo
+                gain1.gain.setValueAtTime(0.8, audioCtx.currentTime); // Volume alto
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start();
+                osc1.stop(audioCtx.currentTime + 0.25);
+
+                // Segundo Bipe Agudo (logo em seguida)
+                setTimeout(() => {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.type = 'triangle';
+                    osc2.frequency.setValueAtTime(1318.51, audioCtx.currentTime); // Nota Mi agudo
+                    gain2.gain.setValueAtTime(0.8, audioCtx.currentTime);
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.start();
+                    osc2.stop(audioCtx.currentTime + 0.35);
+                }, 300);
+
             } catch (err) {
-                console.log("Áudio aguardando interação do usuário.");
+                console.log("Alarme aguardando interação do usuário.");
             }
         }
 
