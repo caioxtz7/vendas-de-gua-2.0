@@ -134,7 +134,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <div>
                     <h2 class="text-lg font-bold">Cadastro de Clientes</h2>
-                    <p class="text-xs text-slate-400">Endereços salvos para entrega rápida</p>
+                    <p class="text-xs text-slate-400">Endereços e links de GPS salvos para entrega rápida</p>
                 </div>
                 <button onclick="abrirModalCliente()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition">
                     <i class="fa-solid fa-user-plus"></i> Adicionar Cliente
@@ -152,12 +152,32 @@
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
                     <h2 class="text-lg font-bold text-amber-400">Painel do Entregador (Tempo Real)</h2>
-                    <p class="text-xs text-slate-400">Ajuste o pagamento, chame no WhatsApp se precisar e conclua</p>
+                    <p class="text-xs text-slate-400">Selecione as entregas desejadas e monte a rota de paradas</p>
                 </div>
                 <button id="btn-ativar-notificacao" onclick="solicitarPermissaoNotificacao()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md active:scale-95 transition">
                     <i class="fa-solid fa-bell"></i> Ativar Sons e Notificações
                 </button>
             </div>
+
+            <!-- PAINEL DE ROTA COM MÚLTIPLAS PARADAS -->
+            <div id="painel-rota-multipla" class="hidden bg-gradient-to-r from-blue-900/60 to-slate-800 p-4 rounded-xl border border-blue-500/50 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-blue-600 rounded-xl text-white text-xl">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-100"><span id="qtd-selecionadas">0</span> entregas selecionadas</h3>
+                        <p class="text-xs text-slate-300">Pronto para gerar a rota sequencial com paradas</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="selecionarTodasEntregas(true)" class="flex-1 sm:flex-none px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded-lg transition">Marcar Todas</button>
+                    <button onclick="abrirRotaComParadas()" class="flex-2 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-md flex items-center justify-center gap-2 transition active:scale-95">
+                        <i class="fa-solid fa-map-location-dot"></i> Abrir Rota com Paradas
+                    </button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-entregas"></div>
         </section>
 
@@ -282,11 +302,15 @@
                     </div>
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400">Rua e Bairro (Para o Google Maps) *</label>
+                    <label class="text-xs text-slate-400">Rua e Bairro (Endereço escrito) *</label>
                     <input type="text" id="ent-rua-bairro" placeholder="Ex: Rua das Flores, Centro" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400">Nº / Apto / Complemento (Para o entregador)</label>
+                    <label class="text-xs text-slate-400">Link do Google Maps (Opcional - Direto na casa)</label>
+                    <input type="text" id="ent-link-maps" placeholder="Cole o link do Google Maps aqui..." class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400">Nº / Apto / Complemento</label>
                     <input type="text" id="ent-complemento" placeholder="Ex: Nº 123, Apto 201" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
                 <div class="text-xs text-amber-400 font-semibold flex items-center gap-1">
@@ -379,9 +403,10 @@
     <div id="modal-cliente" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-800 max-w-md w-full rounded-2xl border border-slate-700 p-5 space-y-4">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                <h3 class="font-bold text-lg">Novo Cliente</h3>
+                <h3 class="font-bold text-lg" id="modal-cli-titulo">Novo Cliente</h3>
                 <button onclick="fecharModalCliente()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
+            <input type="hidden" id="cli-id">
             <div class="space-y-3">
                 <div>
                     <label class="text-xs text-slate-400">Nome do Cliente *</label>
@@ -392,8 +417,12 @@
                     <input type="text" id="cli-tel" placeholder="21999999999 (Apenas números com DDD)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400">Rua e Bairro (Para GPS / Maps) *</label>
+                    <label class="text-xs text-slate-400">Rua e Bairro (Endereço) *</label>
                     <input type="text" id="cli-rua-bairro" placeholder="Rua São Paulo, Centro" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400">Link do Google Maps (Localização Fixa da Casa)</label>
+                    <input type="text" id="cli-link-maps" placeholder="Cole o link do Google Maps aqui..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm">
                 </div>
                 <div>
                     <label class="text-xs text-slate-400">Nº / Apto / Complemento</label>
@@ -776,6 +805,7 @@
             document.getElementById('venda-busca-cliente').value = '';
             document.getElementById('ent-nome').value = '';
             document.getElementById('ent-rua-bairro').value = '';
+            document.getElementById('ent-link-maps').value = '';
             document.getElementById('ent-complemento').value = '';
 
             carregarSelectClientes();
@@ -807,6 +837,7 @@
                 setTipoEntrega('entrega');
                 document.getElementById('ent-nome').value = cli.nome;
                 document.getElementById('ent-rua-bairro').value = cli.ruaBairro;
+                document.getElementById('ent-link-maps').value = cli.linkMaps || '';
                 document.getElementById('ent-complemento').value = cli.complemento || '';
                 window.clienteTelSelecionado = cli.tel || '';
             }
@@ -896,12 +927,16 @@
 
             let clienteNome = tipoEntrega === 'entrega' ? (document.getElementById('ent-nome').value || 'Cliente') : 'Balcão';
             let ruaBairro = tipoEntrega === 'entrega' ? document.getElementById('ent-rua-bairro').value : '';
+            let linkMaps = tipoEntrega === 'entrega' ? document.getElementById('ent-link-maps').value : '';
             let complemento = tipoEntrega === 'entrega' ? document.getElementById('ent-complemento').value : '';
             
             let clienteTel = window.clienteTelSelecionado || '';
             if (!clienteTel && tipoEntrega === 'entrega') {
                 const cliEncontrado = (window.clientes || []).find(c => c.nome.toLowerCase() === clienteNome.toLowerCase());
-                if (cliEncontrado) clienteTel = cliEncontrado.tel || '';
+                if (cliEncontrado) {
+                    clienteTel = cliEncontrado.tel || '';
+                    if (!linkMaps) linkMaps = cliEncontrado.linkMaps || '';
+                }
             }
 
             if (!window.dataInicioCaixa) {
@@ -933,6 +968,7 @@
                 cliente: clienteNome,
                 clienteTel: clienteTel,
                 ruaBairro: ruaBairro,
+                linkMaps: linkMaps,
                 complemento: complemento,
                 pagamento: detalhePag,
                 statusEntrega: tipoEntrega === 'entrega' ? 'pendente' : 'concluida'
@@ -1040,20 +1076,29 @@
             grid.innerHTML = lista.map(c => {
                 const telLimpo = c.tel ? c.tel.replace(/\D/g, '') : '';
                 const btnWpp = telLimpo ? `<a href="https://wa.me/55${telLimpo}" target="_blank" class="text-xs bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white px-2.5 py-1 rounded transition active:scale-95 flex items-center gap-1 font-bold"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : '';
+                const badgeMaps = c.linkMaps ? `<a href="${c.linkMaps}" target="_blank" class="text-xs bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white px-2 py-1 rounded transition active:scale-95 flex items-center gap-1 font-bold"><i class="fa-solid fa-map-pin"></i> Ver no Maps</a>` : `<span class="text-[11px] text-amber-400/80 bg-amber-500/10 px-2 py-0.5 rounded">Sem link GPS</span>`;
 
                 return `
                     <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2.5 relative shadow-md">
                         <div class="flex justify-between items-start">
                             <h4 class="font-bold text-slate-100 text-base">${c.nome}</h4>
-                            <button onclick="excluirCliente('${c.id}')" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-2 py-1 rounded transition active:scale-95">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+                            <div class="flex gap-1.5">
+                                <button onclick="editarCliente('${c.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-400 px-2.5 py-1 rounded transition active:scale-95" title="Editar Cliente / Adicionar Link GPS">
+                                    <i class="fa-solid fa-pen"></i> Editar
+                                </button>
+                                <button onclick="excluirCliente('${c.id}')" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-2 py-1 rounded transition active:scale-95">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="flex justify-between items-center">
                             <p class="text-xs text-slate-400"><i class="fa-solid fa-phone text-blue-400"></i> ${c.tel || 'Não informado'}</p>
                             ${btnWpp}
                         </div>
-                        <p class="text-xs text-slate-300"><i class="fa-solid fa-location-dot text-amber-400"></i> <strong>Rua/Bairro:</strong> ${c.ruaBairro}</p>
+                        <div class="flex justify-between items-center">
+                            <p class="text-xs text-slate-300"><i class="fa-solid fa-location-dot text-amber-400"></i> <strong>Endereço:</strong> ${c.ruaBairro}</p>
+                            ${badgeMaps}
+                        </div>
                         ${c.complemento ? `<p class="text-xs text-slate-400"><strong>Comp:</strong> ${c.complemento}</p>` : ''}
                     </div>
                 `;
@@ -1061,10 +1106,26 @@
         }
 
         function abrirModalCliente() {
+            document.getElementById('cli-id').value = '';
             document.getElementById('cli-nome').value = '';
             document.getElementById('cli-tel').value = '';
             document.getElementById('cli-rua-bairro').value = '';
+            document.getElementById('cli-link-maps').value = '';
             document.getElementById('cli-complemento').value = '';
+            document.getElementById('modal-cli-titulo').innerText = 'Novo Cliente';
+            document.getElementById('modal-cliente').classList.remove('hidden');
+        }
+
+        function editarCliente(id) {
+            const c = (window.clientes || []).find(x => String(x.id) === String(id));
+            if (!c) return;
+            document.getElementById('cli-id').value = c.id;
+            document.getElementById('cli-nome').value = c.nome;
+            document.getElementById('cli-tel').value = c.tel || '';
+            document.getElementById('cli-rua-bairro').value = c.ruaBairro || '';
+            document.getElementById('cli-link-maps').value = c.linkMaps || '';
+            document.getElementById('cli-complemento').value = c.complemento || '';
+            document.getElementById('modal-cli-titulo').innerText = 'Editar Cliente / Adicionar GPS';
             document.getElementById('modal-cliente').classList.remove('hidden');
         }
 
@@ -1073,16 +1134,18 @@
         }
 
         async function salvarCliente() {
+            const id = document.getElementById('cli-id').value || String(Date.now());
             const nome = document.getElementById('cli-nome').value;
             const tel = document.getElementById('cli-tel').value;
             const ruaBairro = document.getElementById('cli-rua-bairro').value;
+            const linkMaps = document.getElementById('cli-link-maps').value;
             const complemento = document.getElementById('cli-complemento').value;
 
-            if (!nome || !ruaBairro) return alert('Preencha o Nome e a Rua/Bairro para GPS.');
+            if (!nome || !ruaBairro) return alert('Preencha o Nome e a Rua/Bairro.');
 
-            const id = String(Date.now());
-            await window.dbSaveCliente({ id, nome, tel, ruaBairro, complemento });
+            await window.dbSaveCliente({ id: String(id), nome, tel, ruaBairro, linkMaps, complemento });
             fecharModalCliente();
+            mostrarToast('✅ Cliente salvo com sucesso!');
         }
 
         async function excluirCliente(id) {
@@ -1091,7 +1154,7 @@
             }
         }
 
-        // ENTREGAS
+        // ENTREGAS E ROTA MULTIPLA
         function renderizarEntregas() {
             const grid = document.getElementById('grid-entregas');
             if(!grid) return;
@@ -1103,28 +1166,34 @@
                 badge.classList.toggle('hidden', pendentes.length === 0);
             }
 
+            atualizarPainelSelecaoRota();
+
             if (pendentes.length === 0) {
                 grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500">Nenhuma entrega pendente no momento.</div>`;
                 return;
             }
 
             grid.innerHTML = pendentes.map(v => {
-                const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.ruaBairro)}`;
+                const urlMaps = v.linkMaps ? v.linkMaps : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.ruaBairro)}`;
                 const pagTipo = v.pagamento ? v.pagamento.tipo : 'pendente';
                 const telLimpo = v.clienteTel ? v.clienteTel.replace(/\D/g, '') : '';
                 const btnWppEntregador = telLimpo ? `<a href="https://wa.me/55${telLimpo}?text=Olá%20${encodeURIComponent(v.cliente)},%20sou%20o%20entregador%20da%20loja%20estou%20a%20caminho%20com%20o%20seu%20pedido!" target="_blank" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-center text-xs flex items-center justify-center gap-2 active:scale-95 transition"><i class="fa-brands fa-whatsapp text-sm"></i> Chamar Cliente no WhatsApp</a>` : '';
                 
                 return `
-                    <div class="bg-slate-800 p-4 rounded-xl border border-amber-500/30 space-y-3 shadow-md">
+                    <div class="bg-slate-800 p-4 rounded-xl border border-amber-500/30 space-y-3 shadow-md relative">
                         <div class="flex justify-between items-start">
-                            <span class="text-xs bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">Entrega Pendente</span>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" value="${v.id}" onchange="atualizarPainelSelecaoRota()" class="checkbox-entrega w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-blue-500">
+                                <span class="text-xs bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">Selecionar para Rota</span>
+                            </label>
                             <span class="text-xs text-slate-400">${v.data ? v.data.split(' ')[1] || '' : ''}</span>
                         </div>
                         <div>
                             <h4 class="font-bold text-lg text-slate-100">${v.cliente}</h4>
                             <p class="text-sm text-slate-300"><strong>Pedido:</strong> ${v.produtoNome}</p>
                             <p class="text-xs text-amber-400 font-bold mt-1">Comissão Motoboy: R$ ${Number(v.taxaEntregador || 0).toFixed(2)}</p>
-                            <p class="text-xs text-slate-400 mt-0.5"><strong>Maps:</strong> ${v.ruaBairro}</p>
+                            <p class="text-xs text-slate-400 mt-0.5"><strong>Endereço:</strong> ${v.ruaBairro}</p>
+                            ${v.linkMaps ? `<p class="text-xs text-blue-400 mt-0.5"><i class="fa-solid fa-map-pin"></i> <strong>GPS:</strong> Link fixo salvo</p>` : ''}
                             ${v.complemento ? `<p class="text-xs text-amber-300"><strong>Comp/Nº:</strong> ${v.complemento}</p>` : ''}
                         </div>
                         
@@ -1141,7 +1210,7 @@
                         <div class="pt-2 border-t border-slate-700 flex flex-col gap-2">
                             ${btnWppEntregador}
                             <a href="${urlMaps}" target="_blank" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-center text-sm flex items-center justify-center gap-2 active:scale-95 transition">
-                                <i class="fa-solid fa-map-location-dot"></i> Abrir Rota Google Maps
+                                <i class="fa-solid fa-map-location-dot"></i> Abrir Rota Avulsa (GPS)
                             </a>
                             <button onclick="concluirEntrega('${v.id}')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded-lg active:scale-95 transition">
                                 ✓ Concluir e Confirmar Entrega
@@ -1150,6 +1219,52 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function selecionarTodasEntregas(marcar) {
+            document.querySelectorAll('.checkbox-entrega').forEach(cb => cb.checked = marcar);
+            atualizarPainelSelecaoRota();
+        }
+
+        function atualizarPainelSelecaoRota() {
+            const checkboxes = document.querySelectorAll('.checkbox-entrega:checked');
+            const painel = document.getElementById('painel-rota-multipla');
+            const spanQtd = document.getElementById('qtd-selecionadas');
+            
+            if (!painel) return;
+
+            if (checkboxes.length > 0) {
+                painel.classList.remove('hidden');
+                if (spanQtd) spanQtd.innerText = checkboxes.length;
+            } else {
+                painel.classList.add('hidden');
+            }
+        }
+
+        function abrirRotaComParadas() {
+            const checkboxes = document.querySelectorAll('.checkbox-entrega:checked');
+            if (checkboxes.length === 0) return alert('Selecione pelo menos uma entrega para montar a rota.');
+
+            let destinos = [];
+            checkboxes.forEach(cb => {
+                const vendaId = cb.value;
+                const v = (window.vendas || []).find(x => String(x.id) === String(vendaId));
+                if (v) {
+                    let destinoStr = v.linkMaps ? v.linkMaps : v.ruaBairro;
+                    destinos.push(encodeURIComponent(destinoStr));
+                }
+            });
+
+            // O Google Maps aceita URLs de direções múltiplas no formato: 
+            // https://www.google.com/maps/dir/?api=1&destination=ULTIMO_DESTINO&waypoints=DESTINO_1|DESTINO_2
+            let ultimoDestino = destinos.pop();
+            let urlMaps = `https://www.google.com/maps/dir/?api=1&destination=${ultimoDestino}`;
+            
+            if (destinos.length > 0) {
+                urlMaps += `&waypoints=${destinos.join('|')}`;
+            }
+
+            window.open(urlMaps, '_blank');
         }
 
         async function concluirEntrega(id) {
