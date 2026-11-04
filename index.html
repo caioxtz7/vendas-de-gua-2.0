@@ -21,6 +21,11 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen pb-28 md:pb-6 font-sans select-none">
 
+    <!-- Elemento de Áudio Oculto com o seu Áudio Personalizado -->
+    <audio id="audio-notificacao" preload="auto">
+        <source src="agua_do_amigo_notificacao_animada.mp3" type="audio/mpeg">
+    </audio>
+
     <!-- Notificação Flutuante (Toast) -->
     <div id="toast-venda" class="fixed top-14 left-1/2 transform -translate-x-1/2 z-50 bg-emerald-600 text-white font-bold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px]">
         <i class="fa-solid fa-circle-check text-xl"></i>
@@ -155,7 +160,7 @@
                     <p class="text-xs text-slate-400">Selecione as entregas desejadas e monte a rota de paradas</p>
                 </div>
                 <button id="btn-ativar-notificacao" onclick="solicitarPermissaoNotificacao()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md active:scale-95 transition">
-                    <i class="fa-solid fa-bell"></i> Ativar Sons e Notificações
+                    <i class="fa-solid fa-bell"></i> Ativar Som Personalizado e Notificações
                 </button>
             </div>
 
@@ -554,19 +559,32 @@
             if ("Notification" in window) {
                 Notification.requestPermission().then(permissao => {
                     if (permissao === "granted") {
-                        alert("🟢 Sons e Notificações ativados com sucesso!");
+                        alert("🟢 Som personalizado e Notificações ativados com sucesso!");
                         const btn = document.getElementById('btn-ativar-notificacao');
                         if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Notificações Ativas';
                     } else {
-                        alert("Permissão de notificação negada. O som ainda funcionará ao receber entregas.");
+                        alert("Permissão de notificação negada. O áudio personalizado ainda funcionará ao receber entregas.");
                     }
                 });
             } else {
-                alert("Sons de notificação habilitados!");
+                alert("Áudio personalizado habilitado!");
             }
         }
 
         function tocarSomNotificacao() {
+            const audio = document.getElementById('audio-notificacao');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => {
+                    console.log("Áudio bloqueado pelo navegador, usando bipe alternativo.");
+                    tocarBiAlternativo();
+                });
+            } else {
+                tocarBiAlternativo();
+            }
+        }
+
+        function tocarBiAlternativo() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = audioCtx.createOscillator();
@@ -578,7 +596,7 @@
                 gain.connect(audioCtx.destination);
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.4);
-            } catch (e) {
+            } catch (err) {
                 console.log("Áudio aguardando interação do usuário.");
             }
         }
@@ -1255,8 +1273,6 @@
                 }
             });
 
-            // O Google Maps aceita URLs de direções múltiplas no formato: 
-            // https://www.google.com/maps/dir/?api=1&destination=ULTIMO_DESTINO&waypoints=DESTINO_1|DESTINO_2
             let ultimoDestino = destinos.pop();
             let urlMaps = `https://www.google.com/maps/dir/?api=1&destination=${ultimoDestino}`;
             
